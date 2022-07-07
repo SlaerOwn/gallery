@@ -1,4 +1,3 @@
-from multiprocessing import AuthenticationError
 from fastapi import FastAPI
 import uvicorn  # type: ignore
 from Routes import *
