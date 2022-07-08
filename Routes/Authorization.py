@@ -12,7 +12,7 @@ Database = DatabaseClass()
 async def register(username: str, password: str):
     try:
         password = Hasher.PasswordHash(password)
-        Database.create_user(username, password)
+        await Database.create_user(username, password)
         return {
             "token": Hasher.GetToken(username, password)
         }

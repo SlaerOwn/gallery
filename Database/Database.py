@@ -1,38 +1,34 @@
-import sqlite3
+import aiosqlite
 
 
 class UserExists(Exception): pass
 
-
 class DatabaseClass:
     def __init__(self):
-        self.connect = sqlite3.connect('database.db')
-        self.cur = self.connect.cursor()
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS users(
-                userid INTEGER PRIMARY KEY AUTOINCREMENT,
-                login TEXT UNIQUE,
-                password TEXT
-            );
-        """)
-        self.connect.commit()
+        self.path_to_database = "database.db"
+        self.database_inited = False
 
-    def create_user(self, login: str, password: str) -> None:
-        info = self.cur.execute('SELECT * FROM users WHERE login=?', (login,))
-        if info.fetchone() is None:
-            user = (login, password)
-            self.cur.execute("INSERT INTO users(login, password) VALUES(?, ?);", user)
+    async def database_init(self):
+        async with aiosqlite.connect(self.path_to_database) as db:
+            await db.execute("""CREATE TABLE IF NOT EXISTS users(
+                                    userid INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    login TEXT UNIQUE,
+                                    password TEXT
+                                );
+                            """)
+            await db.commit()
+            self.database_inited = True
+
+    async def request(self, request: str, inserts: list[str]):
+        if(not self.database_inited): await self.database_init()
+        async with aiosqlite.connect(self.path_to_database) as db:
+            async with db.execute(request, inserts) as cursor:
+                result = cursor.fetchall()
+                await db.commit()
+                return result
+
+    async def create_user(self, login: str, password: str) -> None:
+        if(await self.request('SELECT * FROM users WHERE login=?', [login, password]) is None):
+            await self.request("INSERT INTO users(login, password) VALUES(?, ?);", [login, password])
         else:
             raise UserExists()
-        self.connect.commit()
-
-
-    def get_user(self, login):
-        info = self.cur.execute('SELECT password FROM users WHERE login=?', (login,))
-        if info.fetchone() is None:
-            print("Такого пользователя не существует!")  # в будущем сообщение об ошибке
-        else:
-            self.cur.execute('SELECT password FROM users WHERE login=?', (login,))
-            password = self.cur.fetchone()
-            print(password[0])
-            return password
-
