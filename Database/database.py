@@ -1,10 +1,13 @@
 import sqlite3
 
 
-def UserExists(): pass
+class UserExists(Exception): pass
 
 
-class Database:
+class UserNotExists(Exception): pass
+
+
+class DatabaseClass:
     def __init__(self):
         self.connect = sqlite3.connect('database.db')
         self.cur = self.connect.cursor()
@@ -16,13 +19,13 @@ class Database:
         """)
         self.connect.commit()
 
-    def create_user(self, login, password):
+    def create_user(self, login, password) -> object:
         info = self.cur.execute('SELECT * FROM users WHERE login=?', (login,))
         if info.fetchone() is None:
             user = (login, password)
             self.cur.execute("INSERT INTO users(login, password) VALUES(?, ?);", user)
         else:
-            return UserExists
+            raise UserExists()
         self.connect.commit()
 
 
@@ -30,9 +33,9 @@ class Database:
         info = self.cur.execute('SELECT password FROM users WHERE login=?', (login,))
         if info.fetchone() is None:
             print("Такого пользователя не существует!")  # в будущем сообщение об ошибке
+            raise UserNotExists()
         else:
             self.cur.execute('SELECT password FROM users WHERE login=?', (login,))
             password = self.cur.fetchone()
-            print(password[0])
-            return password
+            return password[0]
 

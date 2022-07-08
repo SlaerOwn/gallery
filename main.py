@@ -1,27 +1,15 @@
 from fastapi import FastAPI, HTTPException
 import uvicorn  # type: ignore
-from fastapi.encoders import jsonable_encoder
-from database import Database
-from Authorization import *
+from multiprocessing import AuthenticationError
+from Routes import Authorization
+from utils.Hasher import *
 
-users = {}
+
+Hasher = HasherClass()
+
 
 app = FastAPI()
 
 
+app.include_router(Authorization.router)
 
-@app.post('registration')
-async def register(username: str, password: str) -> str:
-    try:
-        Authorization.register(username, password)
-        return Hasher.GetToken(Hasher, username, password)
-    except UserExists:
-        raise HTTPException(
-            status_code=409,
-            detail='username is occupied'
-        )
-
-
-@app.post('/auth')
-async def authorization(username: str, password: str) -> str:
-    pass
