@@ -1,15 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 import uvicorn  # type: ignore
-from multiprocessing import AuthenticationError
-from Routes import Authorization
-from utils.Hasher import *
-
-
-Hasher = HasherClass()
-
+from Routes import *
 
 app = FastAPI()
 
-
 app.include_router(Authorization.router)
-
