@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from Database.Database import *
+from Database.database import *
 from Utils.Hasher import HasherClass
 from Models.api import TokenResponse
 
@@ -21,3 +21,4 @@ async def register(username: str, password: str):
             status_code=409,
             detail='username is occupied'
         )
+        
