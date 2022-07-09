@@ -22,26 +22,19 @@ class DatabaseClass:
         if(not self.database_inited): await self.database_init()
         async with aiosqlite.connect(self.path_to_database) as db:
             async with db.execute(request, inserts) as cursor:
-                result = cursor.fetchall()
+                result = list(map(lambda x: list(x), list(await cursor.fetchall())))
                 await db.commit()
                 return result
 
-    async def get_request(self, request: str, inserts: list[str]):
-        if(not self.database_inited): await self.database_init()
-        async with aiosqlite.connect(self.path_to_database) as db:
-            async with db.execute(request, inserts) as cursor:
-                result = cursor.fetchone()
-                await db.commit()
-                return result[0]
-
     async def create_user(self, login: str, password: str) -> None:
-        if(await self.request('SELECT * FROM users WHERE login=?', [login, password]) is None):
+        if(await self.request('SELECT * FROM users WHERE login=?', [login]) is None):
             await self.request("INSERT INTO users(login, password) VALUES(?, ?);", [login, password])
         else:
             raise UserExists()
 
-    async def get_user(self, login: str) -> None:
+    async def get_user(self, login: str) -> str:
         if(await self.request('SELECT * FROM users WHERE login=?', [login]) is None):
             raise UserExists()
         else:
-            await self.get_request('SELECT password FROM users WHERE login=?', [login])
+            SQLResult = await self.request('SELECT password FROM users WHERE login=?', [login])
+            return str(SQLResult[0][0])
