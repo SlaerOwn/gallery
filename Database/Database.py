@@ -1,6 +1,7 @@
 import aiosqlite
 
 class UserExists(Exception): pass
+class UserNotExists(Exception): pass
 
 class DatabaseClass:
     def __init__(self):
@@ -27,14 +28,14 @@ class DatabaseClass:
                 return result
 
     async def create_user(self, login: str, password: str) -> None:
-        if(await self.request('SELECT * FROM users WHERE login=?', [login]) is None):
+        if(len(await self.request('SELECT * FROM users WHERE login=?', [login])) == 0):
             await self.request("INSERT INTO users(login, password) VALUES(?, ?);", [login, password])
         else:
             raise UserExists()
 
     async def get_user(self, login: str) -> str:
-        if(await self.request('SELECT * FROM users WHERE login=?', [login]) is None):
-            raise UserExists()
+        if(not len(await self.request('SELECT * FROM users WHERE login=?', [login]))):
+            raise UserNotExists()
         else:
             SQLResult = await self.request('SELECT password FROM users WHERE login=?', [login])
             return str(SQLResult[0][0])
