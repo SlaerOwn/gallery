@@ -52,7 +52,6 @@ class DatabaseClass:
             SQLResult = await self.request('SELECT password FROM users WHERE login=?', [login])
             return str(SQLResult[0][0])
 
-    
     async def delete_user(self, id: int) -> None:
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
@@ -117,3 +116,21 @@ class DatabasePhoto:
             photo_path = ("Photos/" + str(id) + ".jpg")
             photo = await self.convert_from_blob(photo_data[0][0], photo_path)
             return photo_data
+
+    async def get_all_photos(self):
+        ids = await self.request('SELECT id FROM photos', [])
+        print(ids)
+
+    async def change_description(self, id: int, description: str) -> None:
+        if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
+            raise UserNotExists()
+        else:
+            date = str(datetime.datetime.now())
+            data = await self.request('SELECT * FROM photos WHERE id=?', [id])
+            await self.request("Update photos set description=?, date=? where id=?", [description, date, id])
+
+    async def delete_photo(self, id: int):
+        if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
+            raise UserNotExists()
+        else:
+            await self.request('DELETE FROM photos WHERE id=?', [id])
