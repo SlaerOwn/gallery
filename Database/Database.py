@@ -148,12 +148,3 @@ class DatabaseClass:
             raise PhotoNotExists()
         else:
             return await self.request('SELECT * FROM comments WHERE photoid=?', [photoid])
-
-db = DatabaseClass()
-
-async def main():
-    print(await db.get_comments(14))
-    
-
-
-asyncio.run(main())
