@@ -37,7 +37,8 @@ async def authorization(username: str, password: str):
         )
     if hashed_password:
         if Hasher.CheckPassword(hashed_password, password):
-            return {'token': Hasher.GetToken(user_id, hashed_password)}
+            return {'token': Hasher.GetToken(user_id, hashed_password),
+                    'user_id': user_id}
         else:
             raise HTTPException(
                 status_code=400,
