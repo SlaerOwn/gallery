@@ -8,6 +8,7 @@ router = APIRouter()
 Hasher = HasherClass()
 Database = DatabaseClass()
 
+
 @router.post('/registration', response_model=TokenResponse)
 async def register(username: str, password: str):
     try:
@@ -22,10 +23,11 @@ async def register(username: str, password: str):
             detail='Username is occupied'
         )
 
+
 @router.post('/authorization', response_model=TokenResponse)
 async def authorization(username: str, password: str):
     try:
-        hashed_password = await Database.get_user(username)
+        hashed_password = await Database.get_password(username)
     except UserNotExists:
         raise HTTPException(
             status_code=404,
