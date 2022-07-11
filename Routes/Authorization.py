@@ -9,13 +9,14 @@ Hasher = HasherClass()
 Database = DatabaseClass()
 
 
-@router.post('/registration', response_model=TokenResponse)
+@router.post('/registration')
 async def register(username: str, password: str):
     try:
         password = Hasher.PasswordHash(password)
-        await Database.create_user(username, password)
+        user_id = await Database.create_user(username, password)
         return {
-            "token": Hasher.GetToken(username, password)
+            "token": Hasher.GetToken(user_id, password),
+            "user_id": user_id
         }
     except UserExists:
         raise HTTPException(
@@ -24,10 +25,11 @@ async def register(username: str, password: str):
         )
 
 
-@router.post('/authorization', response_model=TokenResponse)
+@router.post('/authorization')
 async def authorization(username: str, password: str):
     try:
         hashed_password = await Database.get_password(username)
+        user_id = await Database.get_user(username)[0]
     except UserNotExists:
         raise HTTPException(
             status_code=404,
@@ -35,7 +37,7 @@ async def authorization(username: str, password: str):
         )
     if hashed_password:
         if Hasher.CheckPassword(hashed_password, password):
-            return {'token': Hasher.GetToken(username, hashed_password)}
+            return {'token': Hasher.GetToken(user_id, hashed_password)}
         else:
             raise HTTPException(
                 status_code=400,
