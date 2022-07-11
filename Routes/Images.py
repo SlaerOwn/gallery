@@ -34,6 +34,7 @@ async def get_all_images():
     lst = []
     for i in range(amount):
         lst += Database.get_photo(amount)
+    return lst
 
 
 @router.get('/images/{image_ID}')
