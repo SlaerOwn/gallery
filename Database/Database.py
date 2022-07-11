@@ -1,11 +1,12 @@
 import aiosqlite
 import datetime
-import aiofiles
-import os
 import asyncio
+
 
 class UserExists(Exception): pass
 class UserNotExists(Exception): pass
+class PhotoNotExists(Exception): pass
+class CommentNotExists(Exception): pass
 
 class DatabaseClass:
     def __init__(self):
@@ -22,6 +23,28 @@ class DatabaseClass:
                                 );
                             """)
             await db.commit()
+            await db.execute("""CREATE TABLE IF NOT EXISTS photos(
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    image BLOB NOT NULL,
+                                    description TEXT,
+                                    date TEXT
+                                );
+                            """)
+            await db.commit()
+            await db.execute("""CREATE TABLE IF NOT EXISTS comments(
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    author INTEGER,
+                                    photoid INTEGER,
+                                    description TEXT,
+                                    date TEXT
+                                );
+                            """)
+            await db.commit()
+            cursor = await db.execute('SELECT * FROM users WHERE login=?', ["admin"])
+            res = list(map(lambda x: list(x), list(await cursor.fetchall())))
+            if len(res) == 0:
+                await db.execute("INSERT INTO users(login, password, role) VALUES(?, ?, ?);", ["admin", "admin", "admin"])
+                await db.commit()
             self.database_inited = True
 
     async def request(self, request: str, inserts: list[str]):
@@ -32,24 +55,26 @@ class DatabaseClass:
                 await db.commit()
                 return result
 
-    async def create_user(self, login: str, password: str, role: str = 'default') -> None:
+    async def create_user(self, login: str, password: str, role: str = 'default') -> int:
         if(len(await self.request('SELECT * FROM users WHERE login=?', [login])) == 0):
             await self.request("INSERT INTO users(login, password, role) VALUES(?, ?, ?);", [login, password, role])
+            id = await self.request('SELECT userid FROM users WHERE login=?', [login])
+            return id[0][0]
         else:
             raise UserExists()
 
-    async def get_user(self, login: str) -> str:
-        if(not len(await self.request('SELECT * FROM users WHERE login=?', [login]))):
+    async def get_user(self, id: int) -> str:
+        if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            SQLResult = await self.request('SELECT userid, login, role FROM users WHERE login=?', [login])
+            SQLResult = await self.request('SELECT userid, login, role FROM users WHERE userid=?', [id])
             return str(SQLResult[0])
 
-    async def get_password(self, login: str) -> str:
-        if(not len(await self.request('SELECT * FROM users WHERE login=?', [login]))):
+    async def get_password(self, id: int) -> str:
+        if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            SQLResult = await self.request('SELECT password FROM users WHERE login=?', [login])
+            SQLResult = await self.request('SELECT password FROM users WHERE userid=?', [id])
             return str(SQLResult[0][0])
 
     async def delete_user(self, id: int) -> None:
@@ -68,53 +93,15 @@ class DatabaseClass:
             else:
                 return True  
 
-class DatabasePhoto:
-    def __init__(self):
-        self.path_to_database = "database.db"
-        self.database_inited = False
-
-    async def database_init(self):
-        async with aiosqlite.connect(self.path_to_database) as db:
-            await db.execute("""CREATE TABLE IF NOT EXISTS photos(
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    image BLOB NOT NULL,
-                                    description TEXT,
-                                    date TEXT
-                                );
-                            """)
-            await db.commit()
-            self.database_inited = True
-
-    async def request(self, request: str, inserts: list):
-        if(not self.database_inited): await self.database_init()
-        async with aiosqlite.connect(self.path_to_database) as db:
-            async with db.execute(request, inserts) as cursor:
-                result = list(map(lambda x: list(x), list(await cursor.fetchall())))
-                await db.commit()
-                return result
-
-    async def convert_to_blob(self, filename):
-        async with aiofiles.open(filename, 'rb') as file:
-            blob_data = await file.read()
-        return blob_data
-
-    async def convert_from_blob(self, data, filename):
-        async with aiofiles.open(filename, 'wb') as file:
-            await file.write(data)
-        return file
-
-    async def add_photo(self, image, description: str) -> None:
-        photo = await self.convert_to_blob(image)
+    async def add_photo(self, image: str, description: str) -> None:
         date = str(datetime.datetime.now())
-        await self.request("INSERT INTO photos(image, description, date) VALUES(?, ?, ?);", [photo, description, date])
+        await self.request("INSERT INTO photos(image, description, date) VALUES(?, ?, ?);", [image, description, date])
 
     async def get_photo(self, id: int):
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
-            raise UserNotExists()
+            raise PhotoNotExists()
         else:
             photo_data = await self.request('SELECT image FROM photos WHERE id=?', [id])
-            photo_path = ("Photos/" + str(id) + ".jpg")
-            photo = await self.convert_from_blob(photo_data[0][0], photo_path)
             return photo_data
 
     async def get_all_photos(self):
@@ -123,14 +110,50 @@ class DatabasePhoto:
 
     async def change_description(self, id: int, description: str) -> None:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
-            raise UserNotExists()
+            raise PhotoNotExists()
         else:
             date = str(datetime.datetime.now())
-            data = await self.request('SELECT * FROM photos WHERE id=?', [id])
             await self.request("Update photos set description=?, date=? where id=?", [description, date, id])
 
     async def delete_photo(self, id: int):
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
-            raise UserNotExists()
+            raise PhotoNotExists()
         else:
             await self.request('DELETE FROM photos WHERE id=?', [id])
+
+    async def add_comment(self, author: int, photo: int, comment: str):
+        if(not len(await self.request('SELECT * FROM users WHERE userid=?', [author]))):
+            raise UserNotExists()
+        if(not len(await self.request('SELECT * FROM photos WHERE id=?', [photo]))):
+            raise PhotoNotExists()
+        else:
+            date = str(datetime.datetime.now())
+            await self.request("INSERT INTO comments(author, photoid, description, date) VALUES(?, ?, ?, ?);", [author, photo, comment, date])
+
+    async def change_comment(self, commentid: int, comment: str):
+        if(not len(await self.request('SELECT * FROM comments WHERE id=?', [commentid]))):
+            raise CommentNotExists()
+        else:
+            date = str(datetime.datetime.now())
+            await self.request("Update comments set description=?, date=? where id=?", [comment, date, commentid])
+
+    async def delete_comment(self, id: int):
+        if(not len(await self.request('SELECT * FROM comments WHERE id=?', [id]))):
+            raise CommentNotExists()
+        else:
+            await self.request('DELETE FROM comments WHERE id=?', [id])
+
+    async def get_comments(self, photoid: int):
+        if(not len(await self.request('SELECT * FROM photos WHERE id=?', [photoid]))):
+            raise PhotoNotExists()
+        else:
+            return await self.request('SELECT * FROM comments WHERE photoid=?', [photoid])
+
+db = DatabaseClass()
+
+async def main():
+    print(await db.get_comments(14))
+    
+
+
+asyncio.run(main())
