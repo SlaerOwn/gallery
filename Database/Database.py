@@ -8,6 +8,7 @@ class UserNotExists(Exception): pass
 class PhotoNotExists(Exception): pass
 class CommentNotExists(Exception): pass
 
+
 class DatabaseClass:
     def __init__(self):
         self.path_to_database = "database.db"

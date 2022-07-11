@@ -10,12 +10,12 @@ Database = DatabaseClass()
 
 
 @router.post('/images')
-async def create_image(user_ID: str, token: str, image: str, description: str):
+async def create_image(user_ID: int, token: str, image: str, description: str):
     try:
         if Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             if Hasher.CheckToken(token, user_ID, password):
-                Database.add_photo(image, description)
+                await Database.add_photo(image, description)
                 return HTTPException(status_code=200,
                                      detail='OK')
             else:
@@ -38,24 +38,24 @@ async def get_all_images():
 
 
 @router.get('/images/{image_ID}')
-async def get_image(image_ID: str):
+async def get_image(image_ID: int):
     try:
         Photo = await Database.get_photo(image_ID)
         return Photo
-    except ImageNotFound:
+    except PhotoNotExists:
         return HTTPException(status_code=404, detail='Image not found')
 
 
 @router.delete('/images/{image_ID}')
-async def delete_image(user_ID: str, token: str, image_ID: str):
+async def delete_image(user_ID: int, token: str, image_ID: int):
     try:
         if Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             if Hasher.CheckToken(token, user_ID, password):
                 try:
-                    Database.delete_photo(image_ID)
+                    await Database.delete_photo(image_ID)
                     return HTTPException(status_code=200, detail='OK')
-                except ImageNotFound:
+                except PhotoNotExists:
                     return HTTPException(status_code=404, detail='Image not found')
 
             else:
@@ -67,14 +67,14 @@ async def delete_image(user_ID: str, token: str, image_ID: str):
 
 
 @router.put('/images/{image_ID}')
-async def edit_image(user_ID: str, token: str, description: str, image_ID: str):
+async def edit_image(user_ID: int, token: str, description: str, image_ID: int):
     try:
         if Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             if Hasher.CheckToken(token, user_ID, password):
                 try:
-                    Database.change_description(image_ID, description)
-                except ImageNotFound:
+                    await Database.change_description(image_ID, description)
+                except PhotoNotExists:
                     return HTTPException(status_code=404, detail='Image Not Found')
             else:
                 return HTTPException(status_code=403, detail='Bad Token')
