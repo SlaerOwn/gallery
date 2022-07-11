@@ -8,7 +8,6 @@ router = APIRouter()
 
 Hasher = HasherClass()
 Database = DatabaseClass()
-DbPhoto = DatabasePhoto()
 
 
 @router.post('/images')
