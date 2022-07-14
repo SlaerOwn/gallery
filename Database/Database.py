@@ -1,5 +1,7 @@
+import string
 import aiosqlite
 import datetime
+import Utils.Hasher as Hasher
 import asyncio
 
 
@@ -19,6 +21,8 @@ class DatabaseClass:
             await db.execute("""CREATE TABLE IF NOT EXISTS users(
                                     userid INTEGER PRIMARY KEY AUTOINCREMENT,
                                     login TEXT UNIQUE,
+                                    fcs TEXT,
+                                    pp BLOB,
                                     password TEXT,
                                     role TEXT
                                 );
@@ -41,10 +45,11 @@ class DatabaseClass:
                                 );
                             """)
             await db.commit()
+            password = Hasher.PasswordHash("admin")
             cursor = await db.execute('SELECT * FROM users WHERE login=?', ["admin"])
             res = list(map(lambda x: list(x), list(await cursor.fetchall())))
             if len(res) == 0:
-                await db.execute("INSERT INTO users(login, password, role) VALUES(?, ?, ?);", ["admin", "admin", "admin"])
+                await db.execute("INSERT INTO users(login, password, role, fcs, pp) VALUES(?, ?, ?, ?, ?);", ["admin", password, "admin", "none", "none"])
                 await db.commit()
             self.database_inited = True
 
@@ -56,9 +61,9 @@ class DatabaseClass:
                 await db.commit()
                 return result
 
-    async def create_user(self, login: str, password: str, role: str = 'default') -> int:
+    async def create_user(self, login: str, password: str, role: str = 'default', fcs: str = "none", pp: str = "none") -> int:
         if(len(await self.request('SELECT * FROM users WHERE login=?', [login])) == 0):
-            await self.request("INSERT INTO users(login, password, role) VALUES(?, ?, ?);", [login, password, role])
+            await self.request("INSERT INTO users(login, password, role, fcs, pp) VALUES(?, ?, ?, ?, ?);", [login, password, role, fcs, pp])
             id = await self.request('SELECT userid FROM users WHERE login=?', [login])
             return id[0][0]
         else:
@@ -68,7 +73,7 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            SQLResult = await self.request('SELECT userid, login, role FROM users WHERE userid=?', [id])
+            SQLResult = await self.request('SELECT userid, login, role, fcs, pp FROM users WHERE userid=?', [id])
             return str(SQLResult[0])
 
     async def get_id(self, login: str) -> int:
@@ -96,10 +101,26 @@ class DatabaseClass:
             raise UserNotExists()
         else:
             role = await self.request('SELECT role FROM users WHERE userid=?', [id])
-            if role[0][0] == "default":
-                return False
-            else:
+            if role[0][0] == "writer":
                 return True
+            else:
+                return False
+
+    async def is_admin(self, id: int) -> bool:
+        if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
+            raise UserNotExists()
+        else:
+            role = await self.request('SELECT role FROM users WHERE userid=?', [id])
+            if role[0][0] == "admin":
+                return True
+            else:
+                return False
+
+    async def change_role(self, id: int, role: string) -> bool:
+        if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
+            raise UserNotExists()
+        else:
+            await self.request("Update users set role=? where id=?", [role, id])
 
     async def add_photo(self, image: str, description: str) -> None:
         date = str(datetime.datetime.now())
