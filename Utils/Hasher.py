@@ -13,7 +13,7 @@ class HasherClass:
         return self.PasswordHasher.verify(Password, Hash)  # type: ignore
 
     def GetToken(self, Login: int, HashedPassword: str) -> str:
-        return self.TokenGenerate.hash(Login + HashedPassword)  # type: ignore
+        return self.TokenGenerate.hash(str(Login) + HashedPassword)  # type: ignore
 
     def CheckToken(self, Token: str, Login: int, HashedPassword: str) -> bool:
-        return self.TokenGenerate.verify(Token, Login + HashedPassword)  # type: ignore
+        return self.TokenGenerate.verify(str(Login) + HashedPassword, Token)  # type: ignore

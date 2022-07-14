@@ -48,7 +48,7 @@ class DatabaseClass:
                 await db.commit()
             self.database_inited = True
 
-    async def request(self, request: str, inserts: list[str]):
+    async def request(self, request: str, inserts: list):
         if(not self.database_inited): await self.database_init()
         async with aiosqlite.connect(self.path_to_database) as db:
             async with db.execute(request, inserts) as cursor:
@@ -71,6 +71,13 @@ class DatabaseClass:
             SQLResult = await self.request('SELECT userid, login, role FROM users WHERE userid=?', [id])
             return str(SQLResult[0])
 
+    async def get_id(self, login: str) -> int:
+        if not len(await self.request('SELECT * FROM users WHERE login=?', [login])):
+            raise UserNotExists()
+        else:
+            SQLResult = await self.request('SELECT userid FROM users WHERE login=?', [login])
+            return SQLResult[0][0]
+
     async def get_password(self, id: int) -> str:
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
@@ -88,11 +95,11 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            role = await self.request('SELECT role FROM users WHERE userid=?', [id])    
+            role = await self.request('SELECT role FROM users WHERE userid=?', [id])
             if role[0][0] == "default":
                 return False
             else:
-                return True  
+                return True
 
     async def add_photo(self, image: str, description: str) -> None:
         date = str(datetime.datetime.now())
@@ -106,8 +113,11 @@ class DatabaseClass:
             return photo_data
 
     async def get_all_photos(self):
-        ids = await self.request('SELECT id FROM photos', [])
-        print(ids)
+        if not len(await self.request('SELECT id FROM photos', [])):
+            raise PhotoNotExists
+        else:
+            ids = await self.request('SELECT id FROM photos', [])
+            return ids
 
     async def change_description(self, id: int, description: str) -> None:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
