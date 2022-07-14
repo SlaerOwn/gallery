@@ -116,8 +116,8 @@ class DatabaseClass:
         if not len(await self.request('SELECT id FROM photos', [])):
             raise PhotoNotExists
         else:
-            ids = await self.request('SELECT id FROM photos', [])
-            return ids
+            photos = await self.request('SELECT * FROM photos', [])
+            return photos
 
     async def change_description(self, id: int, description: str) -> None:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):

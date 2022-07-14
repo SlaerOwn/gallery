@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from Database.Database import *
 from Utils.Hasher import HasherClass
-from Models.api import TokenResponse
 
 router = APIRouter()
 

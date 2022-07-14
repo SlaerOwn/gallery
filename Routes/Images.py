@@ -34,21 +34,17 @@ async def create_image(user_ID: int, token: str, image: str, description: str):
 @router.get('/images')
 async def get_all_images():
     try:
-        amount = await Database.get_all_photos()
-        lst = []
-        for i in amount:
-            id = i[0]
-            lst.append(await Database.get_photo(id))
-        return {'list': lst}
+        return {'Photos': Database.get_all_photos()}
     except PhotoNotExists:
         raise HTTPException(status_code=404, detail='No photos yet')
+
 
 
 @router.get('/images/{image_ID}')
 async def get_image(image_ID: int):
     try:
         Photo = await Database.get_photo(image_ID)
-        return Photo
+        return {'Photo': Photo}
     except PhotoNotExists:
         raise HTTPException(status_code=404, detail='Image not found')
 
