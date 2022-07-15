@@ -4,7 +4,7 @@ from Utils.Hasher import HasherClass
 
 router = APIRouter()
 
-Hasher = HasherClass()
+HasherObject = HasherClass()
 Database = DatabaseClass()
 
 
@@ -14,7 +14,7 @@ async def add_comment(image_ID: int, user_ID: int, token: str, comment: str):
         if await Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             try:
-                if Hasher.CheckToken(token, user_ID, password):
+                if HasherObject.CheckToken(token, user_ID, password):
                     try:
                         await Database.add_comment(user_ID, image_ID, comment)
                         return HTTPException(status_code=200, detail='OK')
@@ -44,7 +44,7 @@ async def delete_comment(image_ID: int, user_ID: int, token: str, comment_ID: in
         if await Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             try:
-                if Hasher.CheckToken(token, user_ID, password):
+                if HasherObject.CheckToken(token, user_ID, password):
                     try:
                         await Database.delete_comment(comment_ID)
                         return HTTPException(status_code=200, detail='OK')
@@ -66,7 +66,7 @@ async def edit_comment(image_ID: int, user_ID: int, token: str, comment_id: int,
         if await Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             try:
-                if Hasher.CheckToken(token, user_ID, password):
+                if HasherObject.CheckToken(token, user_ID, password):
                     try:
                         await Database.change_comment(comment_id, comment)
                         return HTTPException(status_code=200, detail='OK')

@@ -1,4 +1,9 @@
 from pydantic import BaseModel
 
-class TokenResponse(BaseModel):
+class SuccessAuthorizationResponse(BaseModel):
+    user_id: int
+    token: str
+
+class NeedIDAndToken(BaseModel):
+    user_id: int
     token: str

@@ -1,9 +1,7 @@
 import string
 import aiosqlite
 import datetime
-import Utils.Hasher as Hasher
-import asyncio
-
+from Utils import *
 
 class UserExists(Exception): pass
 class UserNotExists(Exception): pass
@@ -15,6 +13,7 @@ class DatabaseClass:
     def __init__(self):
         self.path_to_database = "database.db"
         self.database_inited = False
+        self.Hasher = Hasher.HasherClass()
 
     async def database_init(self):
         async with aiosqlite.connect(self.path_to_database) as db:
@@ -45,7 +44,7 @@ class DatabaseClass:
                                 );
                             """)
             await db.commit()
-            password = Hasher.PasswordHash("admin")
+            password = self.Hasher.PasswordHash("admin")
             cursor = await db.execute('SELECT * FROM users WHERE login=?', ["admin"])
             res = list(map(lambda x: list(x), list(await cursor.fetchall())))
             if len(res) == 0:
@@ -53,7 +52,7 @@ class DatabaseClass:
                 await db.commit()
             self.database_inited = True
 
-    async def request(self, request: str, inserts: list):
+    async def request(self, request: str, inserts: list[int | str]):
         if(not self.database_inited): await self.database_init()
         async with aiosqlite.connect(self.path_to_database) as db:
             async with db.execute(request, inserts) as cursor:
@@ -116,7 +115,7 @@ class DatabaseClass:
             else:
                 return False
 
-    async def change_role(self, id: int, role: string) -> bool:
+    async def change_role(self, id: int, role: str):
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
@@ -130,7 +129,7 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
             raise PhotoNotExists()
         else:
-            photo_data = await self.request('SELECT image FROM photos WHERE id=?', [id])
+            photo_data: str = (await self.request('SELECT image FROM photos WHERE id=?', [id]))[0][0]
             return photo_data
 
     async def get_all_photos(self):

@@ -1,21 +1,22 @@
 from fastapi import APIRouter, HTTPException
 from Database.Database import *
+from Models.Api import SuccessAuthorizationResponse
 from Utils.Hasher import HasherClass
 
 router = APIRouter()
 
-Hasher = HasherClass()
+HasherObject = HasherClass()
 Database = DatabaseClass()
 
 
-@router.post('/registration')
+@router.post('/registration', response_model=SuccessAuthorizationResponse)
 async def register(username: str, password: str):
     try:
-        password = Hasher.PasswordHash(password)
+        password = HasherObject.PasswordHash(password)
         user_id = await Database.create_user(username, password)
-        print(Hasher.GetToken(user_id, password))
+        print(HasherObject.GetToken(user_id, password))
         return {
-            "token": Hasher.GetToken(user_id, password),
+            "token": HasherObject.GetToken(user_id, password),
             "user_id": user_id
         }
     except UserExists:
@@ -25,15 +26,17 @@ async def register(username: str, password: str):
         )
 
 
-@router.post('/authorization')
+@router.post('/authorization', response_model=SuccessAuthorizationResponse)
 async def authorization(username: str, password: str):
     try:
         user_id = await Database.get_id(username)
         hashed_password = await Database.get_password(user_id)
         if hashed_password:
-            if Hasher.CheckPassword(hashed_password, password):
-                return {'token': Hasher.GetToken(user_id, hashed_password),
-                        'user_id': user_id}
+            if HasherObject.CheckPassword(hashed_password, password):
+                return {
+                    'token': HasherObject.GetToken(user_id, hashed_password),
+                    'user_id': user_id
+                }
             else:
                 raise HTTPException(
                     status_code=400,

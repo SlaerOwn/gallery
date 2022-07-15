@@ -1,22 +1,25 @@
+from typing import Union
 from fastapi import APIRouter, HTTPException
 from Database.Database import *
 from Utils.Hasher import HasherClass
+from Models.Api import *
+from Models.Images import *
 
 router = APIRouter()
 
 
-Hasher = HasherClass()
+HasherObject = HasherClass()
 Database = DatabaseClass()
 
 
 @router.post('/images')
-async def create_image(user_ID: int, token: str, image: str, description: str):
+async def create_image(image: CreateImageFields, user: NeedIDAndToken):
     try:
-        if await Database.is_writer(user_ID):
-            password = await Database.get_password(user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if Hasher.CheckToken(token, user_ID, password):
-                    await Database.add_photo(image, description)
+                if HasherObject.CheckToken(user.token, user.user_id, password):
+                    await Database.add_photo(image.image, image.description)
                     return HTTPException(status_code=200,
                                          detail='OK')
                 else:
@@ -55,7 +58,7 @@ async def delete_image(user_ID: int, token: str, image_ID: int):
         if await Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             try:
-                if Hasher.CheckToken(token, user_ID, password):
+                if HasherObject.CheckToken(token, user_ID, password):
                     try:
                         await Database.delete_photo(image_ID)
                         return HTTPException(status_code=200, detail='OK')
@@ -77,7 +80,7 @@ async def edit_image(user_ID: int, token: str, description: str, image_ID: int):
         if await Database.is_writer(user_ID):
             password = await Database.get_password(user_ID)
             try:
-                if Hasher.CheckToken(token, user_ID, password):
+                if HasherObject.CheckToken(token, user_ID, password):
                     try:
                         await Database.change_description(image_ID, description)
                         return HTTPException(status_code=200, detail='description changed')
