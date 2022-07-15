@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from Database.Database import *
-from Models.Api import SuccessAuthorizationResponse
+from Models.api import SuccessAuthorizationResponse
 from Utils.Hasher import HasherClass
 
 router = APIRouter()
