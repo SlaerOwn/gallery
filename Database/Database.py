@@ -123,6 +123,12 @@ class DatabaseClass:
         else:
             await self.request("Update users set role=? where id=?", [role, id])
 
+    async def edit_info(self, id: int, fcs: str, pp: str):
+        if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
+            raise UserNotExists()
+        else:
+            await self.request("UPDATE users set fcs=?, pp=? where id=?", [fcs, pp, id])
+
     async def add_photo(self, image: str, description: str) -> None:
         date = str(datetime.datetime.now())
         await self.request("INSERT INTO photos(image, description, date) VALUES(?, ?, ?);", [image, description, date])
