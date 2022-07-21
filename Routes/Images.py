@@ -32,19 +32,19 @@ async def create_image(image: CreateImageFields, user: NeedIDAndToken):
                             detail='User does not exist')
 
 
-@router.get('/images')
+@router.get('/images', response_model=list[ImageResponse])
 async def get_all_images():
     try:
-        return {'Photos': Database.get_all_photos()}
+        return await Database.get_all_photos()
     except PhotoNotExists:
         raise HTTPException(status_code=404, detail='No photos yet')
 
 
-@router.get('/images/{image_ID}')
+@router.get('/images/{image_ID}', response_model=ImageResponse)
 async def get_image(image_ID: int):
     try:
         Photo = await Database.get_photo(image_ID)
-        return {'Photo': Photo}
+        return Photo
     except PhotoNotExists:
         raise HTTPException(status_code=404, detail='Image not found')
 

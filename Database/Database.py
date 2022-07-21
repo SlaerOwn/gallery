@@ -56,11 +56,12 @@ class DatabaseClass:
 
     async def request(self, request: str, inserts: list[int | str]):
         if(not self.database_inited): await self.database_init()
+        result = []
         async with aiosqlite.connect(self.path_to_database) as db:
             async with db.execute(request, inserts) as cursor:
                 result = list(map(lambda x: list(x), list(await cursor.fetchall())))
                 await db.commit()
-                return result
+        return result
 
     async def create_user(self, login: str, password: str, role: str = 'default', fcs: str = "none", pp: str = "none") -> int:
         if(len(await self.request('SELECT * FROM users WHERE login=?', [login])) == 0):
@@ -70,12 +71,18 @@ class DatabaseClass:
         else:
             raise UserExists()
 
-    async def get_user(self, id: int) -> str:
+    async def get_user(self, id: int):
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            SQLResult = await self.request('SELECT userid, login, role, fcs, pp FROM users WHERE userid=?', [id])
-            return str(SQLResult[0])
+            SQLResult = (await self.request('SELECT userid, login, role, fcs, pp FROM users WHERE userid=?', [id]))[0]
+            return {
+                "user_id": SQLResult[0],
+                "login": SQLResult[1],
+                "role": SQLResult[2],
+                "fcs": SQLResult[3],
+                "pp": SQLResult[4],
+            }
 
     async def get_id(self, login: str) -> int:
         if not len(await self.request('SELECT * FROM users WHERE login=?', [login])):
@@ -101,8 +108,8 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            role = await self.request('SELECT role FROM users WHERE userid=?', [id])
-            if role[0][0] == "writer":
+            role = (await self.request('SELECT role FROM users WHERE userid=?', [id]))[0][0]
+            if role == "writer" or role == "admin":
                 return True
             else:
                 return False
@@ -131,15 +138,26 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):
             raise PhotoNotExists()
         else:
-            photo_data: str = (await self.request('SELECT image FROM photos WHERE id=?', [id]))[0][0]
-            return photo_data
+            photo_data = \
+                (await self.request('SELECT image, description, date FROM photos WHERE id=?', [id]))[0]
+            return {
+                "image": str(photo_data[0]),
+                "description": str(photo_data[1]),
+                "date": str(photo_data[2]),
+            }
 
     async def get_all_photos(self):
         if not len(await self.request('SELECT id FROM photos', [])):
             raise PhotoNotExists
         else:
             photos = await self.request('SELECT * FROM photos', [])
-            return photos
+            return [
+                {
+                    "image": str(photo_data[1]),
+                    "description": str(photo_data[2]),
+                    "date": str(photo_data[3]),
+                } for photo_data in photos
+            ]
 
     async def change_description(self, id: int, description: str) -> None:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [id]))):

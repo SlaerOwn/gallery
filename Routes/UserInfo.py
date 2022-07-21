@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from Database.Database import *
 from Models.api import NeedIDAndToken
 from Utils.Hasher import HasherClass
-from Models.UserInfo import UserInfoFields, GiveUser
+from Models.UserInfo import User, UserInfoFields
 
 router = APIRouter()
 
@@ -10,10 +10,10 @@ HasherObject = HasherClass()
 Database = DatabaseClass()
 
 
-@router.get('/userinfo/{user_ID}', status_code=200)
+@router.get('/userinfo/{user_ID}', status_code=200, response_model=User)
 async def get_user(user_ID: int):
     user = await Database.get_user(user_ID)
-    return {'user': user}
+    return user
 
 
 @router.put('/userinfo/{user_ID}', status_code=200)

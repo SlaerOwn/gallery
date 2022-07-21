@@ -9,3 +9,8 @@ class CreateImageFields(BaseModel):
 class EditDescription(BaseModel):
     image_ID: int
     description: str
+
+class ImageResponse(BaseModel):
+    image: str
+    description: str
+    date: str
