@@ -11,6 +11,7 @@ class EditDescription(BaseModel):
     description: str
 
 class ImageResponse(BaseModel):
+    id: int
     image: str
     description: str
     date: str

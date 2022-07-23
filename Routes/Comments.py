@@ -11,14 +11,14 @@ Database = DatabaseClass()
 
 
 @router.post('/images/{image_ID}/comments', status_code=200)
-async def add_comment(comment: CreateCommentsField, user: NeedIDAndToken):
+async def add_comment(comment: str, user: NeedIDAndToken, image_ID: int):
     try:
-        if await Database.is_writer(user.user_ID):
-            password = await Database.get_password(user.user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if HasherObject.CheckToken(user.token, user.user_ID, password):
+                if HasherObject.CheckToken(user.token, user.user_id, password):
                     try:
-                        await Database.add_comment(user.user_ID, comment.image_ID, comment.comment)
+                        await Database.add_comment(user.user_id, image_ID, comment)
                     except PhotoNotExists:
                         raise HTTPException(status_code=404, detail='Image not found')
                 else:
@@ -31,7 +31,7 @@ async def add_comment(comment: CreateCommentsField, user: NeedIDAndToken):
         raise HTTPException(status_code=404, detail='User not found')
 
 
-@router.get('/images/{image_ID}/comments')
+@router.get('/images/{image_ID}/comments')#, response_model=list[Comment])
 async def all_comments(image_ID: int):
     try:
         return await Database.get_comments(image_ID)
@@ -40,12 +40,12 @@ async def all_comments(image_ID: int):
 
 
 @router.delete('/images/{image_ID}/comments/{comment_id}', status_code=200)
-async def delete_comment(user: NeedIDAndToken, comment_ID: int):
+async def delete_comment(user: NeedIDAndToken, comment_ID: int, image_ID: int):
     try:
-        if await Database.is_writer(user.user_ID):
-            password = await Database.get_password(user.user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if HasherObject.CheckToken(user.token, user.user_ID, password):
+                if HasherObject.CheckToken(user.token, user.user_id, password):
                     try:
                         await Database.delete_comment(comment_ID)
                     except CommentNotExists:
@@ -63,10 +63,10 @@ async def delete_comment(user: NeedIDAndToken, comment_ID: int):
 @router.put('/images/{image_ID}/comments/{comment_id}', status_code=200)
 async def edit_comment(user: NeedIDAndToken, edit: EditCommentFields):
     try:
-        if await Database.is_writer(user.user_ID):
-            password = await Database.get_password(user.user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if HasherObject.CheckToken(user.token, user.user_ID, password):
+                if HasherObject.CheckToken(user.token, user.user_id, password):
                     try:
                         await Database.change_comment(edit.comment_ID, edit.comment)
                     except CommentNotExists:

@@ -7,5 +7,5 @@ class SuccessAuthorizationResponse(BaseModel):
 
 
 class NeedIDAndToken(BaseModel):
-    user_ID: int
+    user_id: int
     token: str

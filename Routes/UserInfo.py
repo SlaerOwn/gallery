@@ -19,9 +19,9 @@ async def get_user(user_ID: int):
 @router.put('/userinfo/{user_ID}', status_code=200)
 async def edit_info(user: NeedIDAndToken, info: UserInfoFields):
     try:
-        password = await Database.get_password(user.user_ID)
-        if HasherObject.CheckToken(user.token, user.user_ID, password):
-            Database.edit_info(info.user_ID, info.FIO, info.ProfilePicture)
+        password = await Database.get_password(user.user_id)
+        if HasherObject.CheckToken(user.token, user.user_id, password):
+            await Database.edit_info(user.user_id, info.fcs, info.pp)
         else:
             raise HTTPException(status_code=403, detail='Bad Token')
     except UserNotExists:

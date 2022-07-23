@@ -1,4 +1,3 @@
-from typing import Union
 from fastapi import APIRouter, HTTPException
 from Database.Database import *
 from Utils.Hasher import HasherClass
@@ -15,10 +14,10 @@ Database = DatabaseClass()
 @router.post('/images', status_code=200)
 async def create_image(image: CreateImageFields, user: NeedIDAndToken):
     try:
-        if await Database.is_writer(user.user_ID):
-            password = await Database.get_password(user.user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if HasherObject.CheckToken(user.token, user.user_ID, password):
+                if HasherObject.CheckToken(user.token, user.user_id, password):
                     await Database.add_photo(image.image, image.description)
                 else:
                     raise HTTPException(status_code=403, detail='Bad Token')
@@ -52,10 +51,10 @@ async def get_image(image_ID: int):
 @router.delete('/images/{image_ID}', status_code=200)
 async def delete_image(user: NeedIDAndToken, image_ID: int):
     try:
-        if await Database.is_writer(user.user_ID):
-            password = await Database.get_password(user.user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if HasherObject.CheckToken(user.token, user.user_ID, password):
+                if HasherObject.CheckToken(user.token, user.user_id, password):
                     try:
                         await Database.delete_photo(image_ID)
                     except PhotoNotExists:
@@ -73,10 +72,10 @@ async def delete_image(user: NeedIDAndToken, image_ID: int):
 @router.put('/images/{image_ID}', status_code=200)
 async def edit_image(user: NeedIDAndToken, edit: EditDescription):
     try:
-        if await Database.is_writer(user.user_ID):
-            password = await Database.get_password(user.user_ID)
+        if await Database.is_writer(user.user_id):
+            password = await Database.get_password(user.user_id)
             try:
-                if HasherObject.CheckToken(user.token, user.user_ID, password):
+                if HasherObject.CheckToken(user.token, user.user_id, password):
                     try:
                         await Database.change_description(edit.image_ID, edit.description)
                     except PhotoNotExists:

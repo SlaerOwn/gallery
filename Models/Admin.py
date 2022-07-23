@@ -2,5 +2,5 @@ from pydantic import BaseModel
 
 
 class ChangeRoleFields(BaseModel):
-    user_ID: int
+    user_id: int
     role: str

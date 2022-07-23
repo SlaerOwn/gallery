@@ -41,7 +41,7 @@ class DatabaseClass:
                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                                     author INTEGER,
                                     photoid INTEGER,
-                                    description TEXT,
+                                    comment TEXT,
                                     date TEXT
                                 );
                             """)
@@ -134,7 +134,7 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM users WHERE userid=?', [id]))):
             raise UserNotExists()
         else:
-            await self.request("UPDATE users set fcs=?, pp=? where id=?", [fcs, pp, id])
+            await self.request("UPDATE users set fcs=?, pp=? where userid=?", [fcs, pp, id])
 
     async def add_photo(self, image: str, description: str) -> None:
         date = str(datetime.datetime.now())
@@ -147,6 +147,7 @@ class DatabaseClass:
             photo_data = \
                 (await self.request('SELECT image, description, date FROM photos WHERE id=?', [id]))[0]
             return {
+                "id": str(photo_data[0]),
                 "image": str(photo_data[0]),
                 "description": str(photo_data[1]),
                 "date": str(photo_data[2]),
@@ -159,6 +160,7 @@ class DatabaseClass:
             photos = await self.request('SELECT * FROM photos', [])
             return [
                 {
+                    "id": str(photo_data[0]),
                     "image": str(photo_data[1]),
                     "description": str(photo_data[2]),
                     "date": str(photo_data[3]),
@@ -185,14 +187,14 @@ class DatabaseClass:
             raise PhotoNotExists()
         else:
             date = str(datetime.datetime.now())
-            await self.request("INSERT INTO comments(author, photoid, description, date) VALUES(?, ?, ?, ?);", [author, photo, comment, date])
+            await self.request("INSERT INTO comments(author, photoid, comment, date) VALUES(?, ?, ?, ?);", [author, photo, comment, date])
 
     async def change_comment(self, commentid: int, comment: str):
         if(not len(await self.request('SELECT * FROM comments WHERE id=?', [commentid]))):
             raise CommentNotExists()
         else:
             date = str(datetime.datetime.now())
-            await self.request("Update comments set description=?, date=? where id=?", [comment, date, commentid])
+            await self.request("Update comments set comment=?, date=? where id=?", [comment, date, commentid])
 
     async def delete_comment(self, id: int):
         if(not len(await self.request('SELECT * FROM comments WHERE id=?', [id]))):
@@ -204,4 +206,19 @@ class DatabaseClass:
         if(not len(await self.request('SELECT * FROM photos WHERE id=?', [photoid]))):
             raise PhotoNotExists()
         else:
-            return await self.request('SELECT * FROM comments WHERE photoid=?', [photoid])
+            comments = await self.request('SELECT * FROM comments JOIN users ON author = userid WHERE photoid=?', [photoid])
+            return [
+                {
+                    "id": comment[0],
+                    "photoid": comment[2],
+                    "comment": comment[3],
+                    "date": comment[4],
+                    "author": {
+                        "user_id": comment[5],
+                        "login": comment[6],
+                        "role": comment[10],
+                        "fcs": comment[7],
+                        "pp": comment[8],
+                    }
+                } for comment in comments
+            ]

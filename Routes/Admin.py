@@ -13,10 +13,10 @@ Database = DatabaseClass()
 @router.put('/admin')
 async def edit_writers(user: NeedIDAndToken, change: ChangeRoleFields):
     try:
-        if await Database.is_admin(user.user_ID):
-            password = await Database.get_password(user.user_ID)
-            if HasherObject.CheckToken(user.token, user.user_ID, password):
-                await Database.change_role(change.user_ID, change.role)
+        if await Database.is_admin(user.user_id):
+            password = await Database.get_password(user.user_id)
+            if HasherObject.CheckToken(user.token, user.user_id, password):
+                await Database.change_role(change.user_id, change.role)
             else:
                 raise HTTPException(status_code=403, detail='Bad Token')
         else:
@@ -28,9 +28,9 @@ async def edit_writers(user: NeedIDAndToken, change: ChangeRoleFields):
 @router.get('/admin', status_code=200)
 async def get_writers(user: NeedIDAndToken):
     try:
-        if await Database.is_admin(user.user_ID):
-            password = await Database.get_password(user.user_ID)
-            if HasherObject.CheckToken(user.token, user.user_ID, password):
+        if await Database.is_admin(user.user_id):
+            password = await Database.get_password(user.user_id)
+            if HasherObject.CheckToken(user.token, user.user_id, password):
                 await Database.get_writers()
             else:
                 raise HTTPException(status_code=403, detail='Bad Token')

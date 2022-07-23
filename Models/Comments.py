@@ -1,11 +1,15 @@
 from pydantic import BaseModel
 
-
-class CreateCommentsField(BaseModel):
-    image_ID: int
-    comment: str
+from Models.UserInfo import User
 
 
 class EditCommentFields(BaseModel):
-    comment_ID: int
+    comment_id: int
     comment: str
+
+class Comment(BaseModel):
+    id: int
+    author: User
+    photoid: int
+    description: str
+    date: str
