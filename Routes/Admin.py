@@ -1,40 +1,38 @@
 from fastapi import APIRouter, HTTPException
+from typing import List
+
 from Database.Database import *
-from Models.api import NeedIDAndToken
-from Models.Admin import *
 from Utils.Hasher import HasherClass
+from Models.api import *
+from Models.Images import *
 
 router = APIRouter()
+
 
 HasherObject = HasherClass()
 Database = DatabaseClass()
 
 
-@router.put('/admin')
-async def edit_writers(user: NeedIDAndToken, change: ChangeRoleFields):
-    try:
-        if await Database.is_admin(user.user_id):
-            password = await Database.get_password(user.user_id)
-            if HasherObject.CheckToken(user.token, user.user_id, password):
-                await Database.change_role(change.user_id, change.role)
-            else:
-                raise HTTPException(status_code=403, detail='Bad Token')
-        else:
-            raise HTTPException(status_code=403, detail='No permissions')
-    except UserNotExists:
-        raise HTTPException(status_code=404, detail='User not found')
+@router.post('/admin', status_code=200)
+async def create_image(image: CreateImageFields, user: NeedToken):
+    hashed_password = await Database.get_password()
+    if HasherObject.CheckToken(user.token, hashed_password):
+        await Database.add_photo(image.image, image.tags)
+    else:
+        raise HTTPException(status_code=401, detail='Bad Token')
 
 
-@router.get('/admin', status_code=200)
-async def get_writers(user: NeedIDAndToken):
+@router.get('/images', response_model=List[ImageResponse])
+async def get_all_images():
+    return {'photos': await Database.get_all_photos()}
+
+
+@router.get('/images/{image_ID}', response_model=ImageResponse)
+async def get_image(image_ID: int):
     try:
-        if await Database.is_admin(user.user_id):
-            password = await Database.get_password(user.user_id)
-            if HasherObject.CheckToken(user.token, user.user_id, password):
-                await Database.get_writers()
-            else:
-                raise HTTPException(status_code=403, detail='Bad Token')
-        else:
-            raise HTTPException(status_code=403, detail='No permissions')
-    except UserNotExists:
-        raise HTTPException(status_code=404, detail='User not found')
+        Photo = await Database.get_photo(image_ID)
+        return Photo
+    except PhotoNotExists:
+        raise HTTPException(status_code=404, detail='Image not found')
+
+

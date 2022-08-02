@@ -1,17 +1,13 @@
 from pydantic import BaseModel
+from typing import List
 
 
 class CreateImageFields(BaseModel):
-    image: str
-    description: str
+    image: str  # blob
+    tags: List[int]
 
-
-class EditDescription(BaseModel):
-    image_ID: int
-    description: str
 
 class ImageResponse(BaseModel):
-    id: int
-    image: str
-    description: str
-    date: str
+    imageId: int
+    image: str  # blob
+    tags: List[int]

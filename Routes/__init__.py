@@ -1,7 +1,5 @@
 from Routes import Authorization
-from Routes import Images
-from Routes import Comments
 from Routes import Admin
-from Routes import UserInfo
+from Routes import About
 
-__all__ = ["Authorization", 'Images', 'Comments', 'Admin', 'UserInfo']
+__all__ = ["Authorization", 'Admin', 'About']
