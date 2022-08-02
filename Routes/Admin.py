@@ -22,17 +22,55 @@ async def create_image(image: CreateImageFields, user: NeedToken):
         raise HTTPException(status_code=401, detail='Bad Token')
 
 
-@router.get('/images', response_model=List[ImageResponse])
-async def get_all_images():
-    return {'photos': await Database.get_all_photos()}
-
-
-@router.get('/images/{image_ID}', response_model=ImageResponse)
-async def get_image(image_ID: int):
+@router.post('/admin', status_code=200)
+async def create_tag(Tag: CreateTagFields, user: NeedToken):
     try:
-        Photo = await Database.get_photo(image_ID)
-        return Photo
-    except PhotoNotExists:
-        raise HTTPException(status_code=404, detail='Image not found')
+        hashed_password = await Database.get_password()
+        if HasherObject.CheckToken(user.token, hashed_password):
+            await Database.Create_tag(Tag.tag)
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
 
 
+@router.delete('/admin', status_code=200)
+async def delete_tag(tagId: int, user: NeedToken):
+    try:
+        hashed_password = await Database.get_password()
+        if HasherObject.CheckToken(user.token, hashed_password):
+            try:
+                await Database.delete_tag(tagId)
+            except TagNotFound:
+                raise HTTPException(status_code=404, detail='Tag not Found')
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
+
+@router.post('/admin', status_code=200)
+async def create_Section(Section: CreateSectionFields, user: NeedToken):
+    try:
+        hashed_password = await Database.get_password()
+        if HasherObject.CheckToken(user.token, hashed_password):
+            await Database.Create_Section(Section.section, Section.includedTags)
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
+
+@router.delete('/admin', status_code=200)
+async def delete_Section(SectionId: int, user: NeedToken):
+    try:
+        hashed_password = await Database.get_password()
+        if HasherObject.CheckToken(user.token, hashed_password):
+            try:
+                await Database.delete_Section(SectionId)
+            except SectionNotFound:
+                raise HTTPException(status_code=404, detail='Section not Found')
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')

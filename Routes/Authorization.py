@@ -11,13 +11,16 @@ Database = DatabaseClass()
 
 @router.post('/authorization', response_model=SuccessAuthorizationResponse)
 async def authorization(password: Authorization):
-    hashed_password = await Database.get_password()
-    if HasherObject.CheckPassword(hashed_password, password):
-        return {
-            'token': HasherObject.GetToken(hashed_password)
-        }
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail='Wrong Password'
-        )
+    try:
+        hashed_password = await Database.get_password()
+        if HasherObject.CheckPassword(hashed_password, password):
+            return {
+                'token': HasherObject.GetToken(hashed_password)
+            }
+        else:
+            raise HTTPException(
+                status_code=401,
+                detail='Wrong Password'
+            )
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
