@@ -1,68 +1,101 @@
 from __future__ import annotations
+from typing import Any
 
-import string
-import aiosqlite
+from databases import Database
 import datetime
+from Models.Admin import AdminInDatabase
 from Utils import *
 
-class UserExists(Exception): pass
-class UserNotExists(Exception): pass
-class PhotoNotExists(Exception): pass
-class CommentNotExists(Exception): pass
+class DatabaseError(Exception): pass
+class UserExists(DatabaseError): pass
+class UserNotExists(DatabaseError): pass
+class PhotoNotExists(DatabaseError): pass
+class CommentNotExists(DatabaseError): pass
 
+class DatabaseConnectionError(DatabaseError): pass
+class DatabaseTransactionError(DatabaseError): pass
 
-class DatabaseClass:
+class DatabaseBaseClass:
     def __init__(self):
         self.path_to_database = "database.db"
-        self.database_inited = False
+        self.database_inited: bool = False
         self.Hasher = Hasher.HasherClass()
+        self.connection_URL : str = "sqlite:///./database.db"
+        self.database: Database | None = None
 
     async def database_init(self):
-        async with aiosqlite.connect(self.path_to_database) as db:
-            await db.execute("""CREATE TABLE IF NOT EXISTS users(
-                                    userid INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    login TEXT UNIQUE,
-                                    fcs TEXT,
-                                    pp BLOB,
-                                    password TEXT,
-                                    role TEXT
-                                );
-                            """)
-            await db.commit()
-            await db.execute("""CREATE TABLE IF NOT EXISTS photos(
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    image BLOB NOT NULL,
-                                    description TEXT,
-                                    date TEXT
-                                );
-                            """)
-            await db.commit()
-            await db.execute("""CREATE TABLE IF NOT EXISTS comments(
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    author INTEGER,
-                                    photoid INTEGER,
-                                    comment TEXT,
-                                    date TEXT
-                                );
-                            """)
-            await db.commit()
-            password = self.Hasher.PasswordHash("admin")
-            cursor = await db.execute('SELECT * FROM users WHERE login=?', ["admin"])
-            res = list(map(lambda x: list(x), list(await cursor.fetchall())))
-            if len(res) == 0:
-                await db.execute("INSERT INTO users(login, password, role, fcs, pp) VALUES(?, ?, ?, ?, ?);", ["admin", password, "admin", "none", "none"])
-                await db.commit()
-            self.database_inited = True
+        self.database = Database(self.connection_URL)
+        await self.database.connect()
+        self.database_inited = True
+        try:
+            await self.request(
+                'CREATE TABLE IF NOT EXISTS admin('\
+                '    hashOfPassword TEXT PRIMARY KEY,'\
+                '    aboutMe TEXT UNIQUE,'\
+                '    avatar TEXT);'
+            )
+            await self.request(
+                'CREATE TABLE IF NOT EXISTS images('\
+                '    imageId INTEGER PRIMARY KEY AUTOINCREMENT,'\
+                '    image BLOB NOT NULL,'\
+                '    tags TEXT);'
+            )
+            await self.request(
+                'CREATE TABLE IF NOT EXISTS tags('\
+                '    tagId INTEGER PRIMARY KEY AUTOINCREMENT,'\
+                '    tag TEXT);'
+            )
+            await self.request(
+                'CREATE TABLE IF NOT EXISTS sections('\
+                '    sectionId INTEGER PRIMARY KEY AUTOINCREMENT,'\
+                '    section TEXT,'\
+                '    includedTags TEXT);'
+            )
+        except Exception as e:
+            print(e)
+            self.database_inited = False
+        finally:
+            return self.database_inited
+    
+    async def database_uninit(self):
+        if(self.database): await self.database.disconnect()
 
-    async def request(self, request: str, inserts: list[int | str]):
-        if(not self.database_inited): await self.database_init()
-        result = []
-        async with aiosqlite.connect(self.path_to_database) as db:
-            async with db.execute(request, inserts) as cursor:
-                result = list(map(lambda x: list(x), list(await cursor.fetchall())))
-                await db.commit()
-        return result
+    async def request(self, request: str, *args: dict[str, str | int], **other: str | int):
+        if(not self.database_inited or self.database == None):
+            if(not await self.database_init()):
+                raise DatabaseConnectionError()
+        try:
+            common_dict = {key: value for dict in [*args, other] for key, value in dict.items()}
+            if("select" not in request.lower()):
+                await self.database.execute(request) #type: ignore
+                return None
+            else:
+                response: list[dict[str, Any]] = \
+                    list(map(
+                        lambda x: dict(x), #type: ignore
+                        await self.database.fetch_all(request, common_dict) #type: ignore
+                    ))
+                return response
+        except Exception as e:
+            print(f"Request error - {e}")
+            raise DatabaseTransactionError()
 
+
+class DatabaseClass(DatabaseBaseClass):
+
+    # --- REQUESTS ---
+
+    getAdminRequest = "SELECT * FROM admin"
+
+
+
+    # --- FUNCTIONS ---
+
+    async def get_admin(self) -> AdminInDatabase | None:
+        response = await self.request(self.getAdminRequest)
+        return None if response is None else response[0] #type: ignore
+
+'''
     async def create_user(self, login: str, password: str, role: str = 'default', fcs: str = "none", pp: str = "none") -> int:
         if(len(await self.request('SELECT * FROM users WHERE login=?', [login])) == 0):
             await self.request("INSERT INTO users(login, password, role, fcs, pp) VALUES(?, ?, ?, ?, ?);", [login, password, role, fcs, pp])
@@ -222,3 +255,4 @@ class DatabaseClass:
                     }
                 } for comment in comments
             ]
+'''
