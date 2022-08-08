@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any
+import asyncio
 
 from databases import Database
 import datetime
@@ -86,14 +87,89 @@ class DatabaseClass(DatabaseBaseClass):
     # --- REQUESTS ---
 
     getAdminRequest = "SELECT * FROM admin"
-
-
+    getPasswordRequest = "SELECT hashOfPassword FROM admin"
+    getInfoRequest = "SELECT aboutMe FROM admin"
+    editInfoRequest = "UPDATE admin set aboutMe=?"
+    addPhotoRequest = "INSERT INTO images(image, tags) VALUES(?, ?);"
+    createTagRequest = "INSERT INTO tags(tag) VALUES(?);"
+    deleteTagRequest = "DELETE FROM tags WHERE tagId=?"
+    createSectionRequest = "INSERT INTO sections(section, includedTags) VALUES(?, ?);"
+    deleteSectionRequest = "DELETE FROM sections WHERE sectionId=?"
+    getAllPhotosRequest = "SELECT * FROM images"
+    getSectionPhotosRequest = "SELECT * FROM images WHERE sectionId=?"
+    getSectionsRequest = "SELECT * FROM sections"
+    getTagsRequest = "SELECT * FROM tags"
 
     # --- FUNCTIONS ---
 
     async def get_admin(self) -> AdminInDatabase | None:
         response = await self.request(self.getAdminRequest)
         return None if response is None else response[0] #type: ignore
+
+    async def get_password(self) -> str:
+        password = await self.request(self.getPasswordRequest)
+        return password[0] 
+
+    async def get_info(self) -> str:
+        info = await self.request(self.getInfoRequest)
+        return info[0] 
+
+    async def edit_info(self, info: str) -> None:
+        await self.request(self.editInfoRequest, [info])
+
+    async def add_photo(self, image: str, included_tags: list[str]) -> None:
+        await self.request(self.addPhotoRequest, [image, included_tags])
+
+    async def create_tag(self, tag: str) -> None:
+        await self.request(self.createTagRequest, [tag])
+
+    async def delete_tag(self, tagId: int) -> None:
+        await self.request(self.deleteTagRequest, [tagId])
+
+    async def create_section(self, section: str, includedTags) -> None:
+        await self.request(self.createSectionRequest, [section, includedTags])
+
+    async def delete_section(self, sectionId: int) -> None:
+        await self.request(self.deleteSectionRequest, [sectionId])
+        
+    async def get_all_photos(self) -> list:
+        photos = self.request(self.getAllPhotosRequest)
+        return[
+            {
+                "imageId": str(photo[0]),
+                "image": str(photo[1]),
+                "tags": str(photo[2]),
+            } for photo in photos
+        ]
+    
+    async def get_section_photos(self, sectionId: int) -> list:
+        photos = self.request(self.getSectionPhotosRequest, [sectionId])
+        return[
+            {
+                "imageId": str(photo[0]),
+                "image": str(photo[1]),
+                "tags": str(photo[2]),
+            } for photo in photos
+        ]
+
+    async def get_sections(self) -> list:
+        sections = self.request(self.getSectionsRequest)
+        return[
+            {
+                "sectionId": str(section[0]),
+                "section": str(section[1]),
+                "includedTags": str(section[2]),
+            } for section in sections
+        ]
+
+    async def get_tags(self) -> list:
+        tags = self.request(self.getTagsRequest)
+        return[
+            {
+                "tagId": str(tag[0]),
+                "tag": str(tag[1]),
+            } for tag in tags
+        ]
 
 '''
     async def create_user(self, login: str, password: str, role: str = 'default', fcs: str = "none", pp: str = "none") -> int:
@@ -256,3 +332,12 @@ class DatabaseClass(DatabaseBaseClass):
                 } for comment in comments
             ]
 '''
+
+db = DatabaseClass()
+
+async def main():
+    print(await db.get_info())
+    
+
+
+asyncio.run(main())
