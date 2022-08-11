@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Any
-import asyncio
+from typing import Any, List
 
 from databases import Database
-import datetime
 from Models.Admin import AdminInDatabase
+from Models.Images import ImageInDatabase
 from Utils import *
 
 class DatabaseError(Exception): pass
@@ -57,7 +56,7 @@ class DatabaseBaseClass:
             self.database_inited = False
         finally:
             return self.database_inited
-    
+
     async def database_uninit(self):
         if(self.database): await self.database.disconnect()
 
@@ -103,8 +102,9 @@ class DatabaseClass(DatabaseBaseClass):
     # --- FUNCTIONS ---
 
     async def get_admin(self) -> AdminInDatabase | None:
-        response = await self.request(self.getAdminRequest)
-        return None if response is None else response[0] #type: ignore
+        response: List[AdminInDatabase] | None \
+                = await self.request(self.getAdminRequest) #type: ignore
+        return response[0] if response and len(response)>0 else None
 
     async def get_password(self) -> str:
         password = await self.request(self.getPasswordRequest)
@@ -133,17 +133,12 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def delete_section(self, sectionId: int) -> None:
         await self.request(self.deleteSectionRequest, {"sectionId": sectionId})
-        
-    async def get_all_photos(self) -> list:
-        photos = self.request(self.getAllPhotosRequest)
-        return[
-            {
-                "imageId": str(photo[0]),
-                "image": str(photo[1]),
-                "tags": str(photo[2]),
-            } for photo in photos
-        ]
-    
+
+    async def get_all_photos(self) -> List[ImageInDatabase] | None:
+        images: List[ImageInDatabase] | None \
+                = await self.request(self.getAllPhotosRequest) #type: ignore
+        return images if images else []
+
     async def get_section_photos(self, sectionId: int) -> list:
         photos = self.request(self.getSectionPhotosRequest, {"sectionId": sectionId})
         return[
@@ -334,12 +329,3 @@ class DatabaseClass(DatabaseBaseClass):
                 } for comment in comments
             ]
 '''
-
-db = DatabaseClass()
-
-async def main():
-    print(await db.get_info())
-    
-
-
-asyncio.run(main())

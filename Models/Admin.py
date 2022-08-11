@@ -11,5 +11,5 @@ class EditInfo(BaseModel):
 
 class AdminInDatabase(TypedDict):
     hashOfPassword: str
-    aboutMe: str
-    avatar: str
+    aboutMe: str | None
+    avatar: str | None

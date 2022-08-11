@@ -1,7 +1,8 @@
-from databases import Database
+from typing import List
 from fastapi import FastAPI
-import uvicorn
+import uvicorn #type: ignore
 from Database.Database import DatabaseClass, DatabaseConnectionError
+from Models.Images import ImageInDatabase
 from Routes import *
 
 app = FastAPI()
@@ -19,6 +20,6 @@ async def shutdown_server():
 #app.include_router(Images.router)
 #app.include_router(TagsAndSections.router)
 
-@app.get("/test")
+@app.get("/test", response_model=List[ImageInDatabase])
 async def test():
-    return await database.get_admin()
+    return await database.get_all_photos()

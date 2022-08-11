@@ -7,10 +7,10 @@ class CreateImageFields(BaseModel):
     tags: List[int]
 
 
-class ImageResponse(BaseModel):
+class ImageInDatabase(BaseModel):
     imageId: int
     image: str  # blob
-    tags: List[int]
+    tags: List[int] | None
 
 
 class CreateTagFields(BaseModel):
