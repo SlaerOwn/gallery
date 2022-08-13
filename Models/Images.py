@@ -32,3 +32,13 @@ class SectionResponse(BaseModel):
     section: str
     includedTags: List[TagResponse]
 
+
+class SectionInDatabase(BaseModel):
+    sectionId: int
+    section: str
+    includedTags: str
+
+
+class TagInDatabase(BaseModel):
+    tagId: int
+    tag: str

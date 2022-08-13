@@ -3,7 +3,7 @@ from typing import Any, List
 
 from databases import Database
 from Models.Admin import AdminInDatabase
-from Models.Images import ImageInDatabase
+from Models.Images import ImageInDatabase, SectionInDatabase, TagInDatabase
 from Utils import *
 
 class DatabaseError(Exception): pass
@@ -140,33 +140,19 @@ class DatabaseClass(DatabaseBaseClass):
         return images if images else []
 
     async def get_section_photos(self, sectionId: int) -> list:
-        photos = self.request(self.getSectionPhotosRequest, {"sectionId": sectionId})
-        return[
-            {
-                "imageId": str(photo[0]),
-                "image": str(photo[1]),
-                "tags": str(photo[2]),
-            } for photo in photos
-        ]
+        images: List[ImageInDatabase] | None \
+                = await self.request(self.getSectionPhotosRequest, {"sectionId": sectionId}) #type: ignore
+        return images if images else []
 
     async def get_sections(self) -> list:
-        sections = self.request(self.getSectionsRequest)
-        return[
-            {
-                "sectionId": str(section[0]),
-                "section": str(section[1]),
-                "includedTags": str(section[2]),
-            } for section in sections
-        ]
+        sections: List[SectionInDatabase] | None \
+            = await self.request(self.getSectionsRequest) #type: ignore
+        return sections if sections else []
 
     async def get_tags(self) -> list:
-        tags = self.request(self.getTagsRequest)
-        return[
-            {
-                "tagId": str(tag[0]),
-                "tag": str(tag[1]),
-            } for tag in tags
-        ]
+        tags: List[TagInDatabase] | None \
+            = await self.request(self.getTagsRequest) #type: ignore
+        return tags if tags else []
 
 '''
     async def create_user(self, login: str, password: str, role: str = 'default', fcs: str = "none", pp: str = "none") -> int:
