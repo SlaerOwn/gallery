@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, List
 
 from databases import Database
-import datetime
 from Models.Admin import AdminInDatabase
+from Models.Images import ImageInDatabase, SectionInDatabase, TagInDatabase
 from Utils import *
 
 class DatabaseError(Exception): pass
@@ -11,6 +11,8 @@ class UserExists(DatabaseError): pass
 class UserNotExists(DatabaseError): pass
 class PhotoNotExists(DatabaseError): pass
 class CommentNotExists(DatabaseError): pass
+class TagNotFound(Exception): pass
+class SectionNotFound(Exception): pass
 
 class DatabaseConnectionError(DatabaseError): pass
 class DatabaseTransactionError(DatabaseError): pass
@@ -20,7 +22,7 @@ class DatabaseBaseClass:
         self.path_to_database = "database.db"
         self.database_inited: bool = False
         self.Hasher = Hasher.HasherClass()
-        self.connection_URL : str = "sqlite:///./database.db"
+        self.connection_URL: str = "sqlite:///./database.db"
         self.database: Database | None = None
 
     async def database_init(self):
@@ -56,7 +58,7 @@ class DatabaseBaseClass:
             self.database_inited = False
         finally:
             return self.database_inited
-    
+
     async def database_uninit(self):
         if(self.database): await self.database.disconnect()
 
@@ -86,14 +88,73 @@ class DatabaseClass(DatabaseBaseClass):
     # --- REQUESTS ---
 
     getAdminRequest = "SELECT * FROM admin"
-
-
+    getPasswordRequest = "SELECT hashOfPassword FROM admin"
+    getInfoRequest = "SELECT aboutMe FROM admin"
+    editInfoRequest = "UPDATE admin set aboutMe=:aboutMe"
+    addPhotoRequest = "INSERT INTO images(image, tags) VALUES(:image, :tags);"
+    createTagRequest = "INSERT INTO tags(tag) VALUES(:tag);"
+    deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId"
+    createSectionRequest = "INSERT INTO sections(section, includedTags) VALUES(:section, :includedTags);"
+    deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId"
+    getAllPhotosRequest = "SELECT * FROM images"
+    getSectionPhotosRequest = "SELECT * FROM images WHERE sectionId=:sectionId"
+    getSectionsRequest = "SELECT * FROM sections"
+    getTagsRequest = "SELECT * FROM tags"
 
     # --- FUNCTIONS ---
 
     async def get_admin(self) -> AdminInDatabase | None:
-        response = await self.request(self.getAdminRequest)
-        return None if response is None else response[0] #type: ignore
+        response: List[AdminInDatabase] | None \
+                = await self.request(self.getAdminRequest) #type: ignore
+        return response[0] if response and len(response)>0 else None
+
+    async def get_password(self) -> str:
+        password = await self.request(self.getPasswordRequest)
+        return password[0]
+
+    async def get_info(self) -> str:
+        info = await self.request(self.getInfoRequest)
+        return info[0]
+
+    async def edit_info(self, info: str) -> None:
+        await self.request(self.editInfoRequest, {"aboutMe": info})
+
+    async def add_photo(self, image: str, included_tags: list[str]) -> None:
+        tags = ";".join(included_tags)
+        await self.request(self.addPhotoRequest, {"image": image, "tags": tags})
+
+    async def create_tag(self, tag: str) -> None:
+        await self.request(self.createTagRequest, {"tag": tag})
+
+    async def delete_tag(self, tagId: int) -> None:
+        await self.request(self.deleteTagRequest, {"tagId": tagId})
+
+    async def create_section(self, section: str, includedTagsList) -> None:
+        includedTags = ";".join(includedTagsList)
+        await self.request(self.createSectionRequest, {"section": section, "includedTags": includedTags})
+
+    async def delete_section(self, sectionId: int) -> None:
+        await self.request(self.deleteSectionRequest, {"sectionId": sectionId})
+
+    async def get_all_photos(self) -> List[ImageInDatabase] | None:
+        images: List[ImageInDatabase] | None \
+                = await self.request(self.getAllPhotosRequest) #type: ignore
+        return images if images else []
+
+    async def get_section_photos(self, sectionId: int) -> list:
+        images: List[ImageInDatabase] | None \
+                = await self.request(self.getSectionPhotosRequest, {"sectionId": sectionId}) #type: ignore
+        return images if images else []
+
+    async def get_sections(self) -> list:
+        sections: List[SectionInDatabase] | None \
+            = await self.request(self.getSectionsRequest) #type: ignore
+        return sections if sections else []
+
+    async def get_tags(self) -> list:
+        tags: List[TagInDatabase] | None \
+            = await self.request(self.getTagsRequest) #type: ignore
+        return tags if tags else []
 
 '''
     async def create_user(self, login: str, password: str, role: str = 'default', fcs: str = "none", pp: str = "none") -> int:

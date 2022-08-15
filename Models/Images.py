@@ -4,13 +4,13 @@ from typing import List
 
 class CreateImageFields(BaseModel):
     image: str  # blob
-    tags: List[int]
+    tags: List[str]
 
 
-class ImageResponse(BaseModel):
+class ImageInDatabase(BaseModel):
     imageId: int
     image: str  # blob
-    tags: List[int]
+    tags: List[int] | None
 
 
 class CreateTagFields(BaseModel):
@@ -32,3 +32,13 @@ class SectionResponse(BaseModel):
     section: str
     includedTags: List[TagResponse]
 
+
+class SectionInDatabase(BaseModel):
+    sectionId: int
+    section: str
+    includedTags: str
+
+
+class TagInDatabase(BaseModel):
+    tagId: int
+    tag: str
