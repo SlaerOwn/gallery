@@ -1,47 +1,30 @@
 from fastapi import APIRouter, HTTPException
 from Database.Database import *
+from Models.Images import *
+from Models.api import *
 from Utils.Hasher import HasherClass
-
 
 router = APIRouter()
 
-
-Hasher = HasherClass()
+HasherObject = HasherClass()
 Database = DatabaseClass()
 
-
-@router.post('/images')
-async def create_image(login: str, token: str, image: str, description: str):
-    try:
-        if Database.is_authorized(login, token):
-            Database.add_photo(image, description)
-            return HTTPException(
-                status_code=200,
-                detail='OK')
-
-    except NoPermissionError:
-        return HTTPException(status_code=403,
-                             detail='No permissions')
-
-    except UserNotExists:
-        return HTTPException(status_code=404,
-                             detail='User does not exist')
-
-
-@router.get('/images')
+'''
+@router.get('', response_model=List[ImageResponse])
 async def get_all_images():
-    return Database.get_photos()
-
-
-@router.delete('/images/{image_id}')
-async def delete_image(login: str, token: str, ID: str):
     try:
-        if Database.is_authorized(login, token):
-            Database.delete_photo(ID)
-            return HTTPException(status_code=200, detail='OK')
+        return {'photos': await database.get_all_photos()}
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
 
-    except NoPermissionError:
-        return HTTPException(status_code=403, detail='No permissions')
 
-    except UserNotExists:
-        return HTTPException(status_code=404, detail='User not found')
+@router.get('/{SectionId}', response_model=List[ImageResponse])
+async def get_Section_Images(SectionId: int):
+    try:
+        Photos = await database.get_section_photos(SectionId)
+        return {'Photos': Photos}
+    except SectionNotExists:
+        raise HTTPException(status_code=404, detail='Section not Found')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database error')
+'''
