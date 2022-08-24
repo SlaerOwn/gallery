@@ -11,8 +11,6 @@ class UserExists(DatabaseError): pass
 class UserNotExists(DatabaseError): pass
 class PhotoNotExists(DatabaseError): pass
 class CommentNotExists(DatabaseError): pass
-class TagNotFound(Exception): pass
-class SectionNotFound(Exception): pass
 
 class DatabaseConnectionError(DatabaseError): pass
 class DatabaseTransactionError(DatabaseError): pass
@@ -22,7 +20,7 @@ class DatabaseBaseClass:
         self.path_to_database = "database.db"
         self.database_inited: bool = False
         self.Hasher = Hasher.HasherClass()
-        self.connection_URL: str = "sqlite:///./database.db"
+        self.connection_URL : str = "sqlite:///./database.db"
         self.database: Database | None = None
 
     async def database_init(self):
@@ -69,7 +67,7 @@ class DatabaseBaseClass:
         try:
             common_dict = {key: value for dict in [*args, other] for key, value in dict.items()}
             if("select" not in request.lower()):
-                await self.database.execute(request) #type: ignore
+                await self.database.execute(request, common_dict) #type: ignore
                 return None
             else:
                 response: list[dict[str, Any]] = \
@@ -114,7 +112,7 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def get_info(self) -> str:
         info = await self.request(self.getInfoRequest)
-        return info[0]
+        return info[0] 
 
     async def edit_info(self, info: str) -> None:
         await self.request(self.editInfoRequest, {"aboutMe": info})
@@ -124,7 +122,7 @@ class DatabaseClass(DatabaseBaseClass):
         await self.request(self.addPhotoRequest, {"image": image, "tags": tags})
 
     async def create_tag(self, tag: str) -> None:
-        await self.request(self.createTagRequest, {"tag": tag})
+        await self.request(self.createTagRequest, tag=tag)
 
     async def delete_tag(self, tagId: int) -> None:
         await self.request(self.deleteTagRequest, {"tagId": tagId})
