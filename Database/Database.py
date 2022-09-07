@@ -37,8 +37,15 @@ class DatabaseBaseClass:
             await self.request(
                 'CREATE TABLE IF NOT EXISTS images('\
                 '    imageId INTEGER PRIMARY KEY AUTOINCREMENT,'\
-                '    image BLOB NOT NULL,'\
-                '    tags TEXT);'
+                '    image BLOB NOT NULL);'
+            )
+            await self.request(
+                'CREATE TABLE IF NOT EXISTS images_to_tags('\
+                '    imageId INTEGER,'\
+                '    tagId INTEGER, '\
+                '    PRIMARY KEY (imageId, tagId)'\
+                '    FOREIGN KEY(imageId) REFERENCES images(imageId),'\
+                '    FOREIGN KEY(tagId) REFERENCES tags(tagId));'
             )
             await self.request(
                 'CREATE TABLE IF NOT EXISTS tags('\
@@ -46,10 +53,17 @@ class DatabaseBaseClass:
                 '    tag TEXT);'
             )
             await self.request(
+                'CREATE TABLE IF NOT EXISTS tags_to_sections('\
+                '    tagId INTEGER,'\
+                '    sectionId INTEGER, '\
+                '    PRIMARY KEY (imageId, tagId)'\
+                '    FOREIGN KEY(tagId) REFERENCES tags(tagId),'\
+                '    FOREIGN KEY(sectionId) REFERENCES sections(sectionId));'
+            )
+            await self.request(
                 'CREATE TABLE IF NOT EXISTS sections('\
                 '    sectionId INTEGER PRIMARY KEY AUTOINCREMENT,'\
-                '    section TEXT,'\
-                '    includedTags TEXT);'
+                '    section TEXT);'
             )
         except Exception as e:
             print(e)

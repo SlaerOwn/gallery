@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import Any, List
 
 
 class CreateImageFields(BaseModel):
@@ -9,8 +9,7 @@ class CreateImageFields(BaseModel):
 
 class ImageInDatabase(BaseModel):
     imageId: int
-    image: str  # blob
-    tags: List[int] | None
+    image: str 
 
 
 class CreateTagFields(BaseModel):

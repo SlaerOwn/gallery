@@ -10,7 +10,7 @@ HasherObject = HasherClass()
 database = DatabaseClass()
 
 
-@router.get('/')
+@router.get('/tags')
 async def get_Tags():
     try:
         Tags = await database.get_tags()
@@ -18,13 +18,9 @@ async def get_Tags():
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
-'''
+@router.get('/sections')
 async def get_Sections():
     try:
-        Sections = await database.get_sections()
-        return {'sections': Sections}
+        return await database.get_sections()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-'''
-
-
