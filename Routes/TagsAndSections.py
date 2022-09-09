@@ -18,6 +18,15 @@ async def get_Tags():
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+@router.post('/images/{imageId}/tags')
+async def add_tags(imageId: int, tags: AddTagsToImageFields, user: NeedToken):
+    try:
+        for tagId in tags.tags:
+            await database.add_tag_to_image(imageId, tagId)
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
+
 @router.get('/sections')
 async def get_Sections():
     try:
