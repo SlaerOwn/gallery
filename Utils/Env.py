@@ -23,7 +23,10 @@ class EnvClass:
         current_env = dict(os.environ.items())
         for key in self.env.keys():
             if(key in current_env.keys()):
-                self.env[key] = current_env[key]
+                try:
+                    self.env[key] = int(current_env[key])
+                except:
+                    self.env[key] = current_env[key]
             else:
                 print(f'{key} didn\'t find in environment. Use default value - {self.env[key]}')
         

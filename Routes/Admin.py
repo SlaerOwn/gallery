@@ -79,7 +79,7 @@ async def AdminInfo():
         return HTTPException(status_code=500, detail='Database Error')
 
 
-@router.post('/authorization', response_model=SuccessAuthorizationResponse)
+@router.post('/admin/auth', response_model=SuccessAuthorizationResponse)
 async def authorization(password: Authorization):
     try:
         hashed_password = await database.get_password()
