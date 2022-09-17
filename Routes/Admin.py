@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 
 from Database.Database import *
-from Models.Admin import EditInfo
+from Models.Admin import CheckToken, EditInfo
 from Utils.Hasher import HasherClass
 from Models.api import *
 from Models.Images import *
@@ -11,6 +11,21 @@ router = APIRouter()
 
 HasherObject = HasherClass()
 database = DatabaseClass()
+
+@router.post('/admin/token', status_code=200)
+async def check_token(body: CheckToken):
+    try:
+        hashed_password = await database.get_password()
+        try:
+            token_correct = HasherObject.CheckToken(body.token, hashed_password)
+        except Exception: raise HTTPException(status_code=401)
+        if(token_correct):
+            return
+        else:
+            raise HTTPException(status_code=401)
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
 
 
 @router.post('/admin/section', status_code=200)
@@ -68,7 +83,7 @@ async def AdminInfo():
 async def authorization(password: Authorization):
     try:
         hashed_password = await database.get_password()
-        hash = str(hashed_password['hashOfPassword'])
+        hash = str(hashed_password)
         if HasherObject.CheckPassword(hash, password.password):
             return {
                 'token': HasherObject.GetToken(hash)

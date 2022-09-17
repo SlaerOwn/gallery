@@ -8,6 +8,9 @@ from pydantic import BaseModel
 class EditInfo(BaseModel):
     info: str
 
+class CheckToken(BaseModel):
+    token: str
+
 
 # --- Database ---
 

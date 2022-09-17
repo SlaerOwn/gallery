@@ -175,7 +175,7 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def get_password(self) -> str:
         password = await self.request(self.getPasswordRequest)
-        return password[0]
+        return password[0]["hashOfPassword"] # type: ignore - there is always a password
 
     async def get_info(self) -> str:
         info = await self.request(self.getInfoRequest)
