@@ -1,5 +1,6 @@
 database.db
-Content/Images/*
+Content/Images/full_size/*
+Content/Images/previews/*
 .vscode/*
 # Byte-compiled / optimized / DLL files
 __pycache__/

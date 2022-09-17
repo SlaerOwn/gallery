@@ -1,5 +1,9 @@
 from __future__ import annotations
+from functools import reduce
+import os
+from pathlib import Path
 from typing import Any, List
+from dotenv import load_dotenv
 
 from databases import Database
 from Models.Admin import AdminInDatabase
@@ -23,6 +27,28 @@ class DatabaseBaseClass:
         self.connection_URL : str = "sqlite:///./database.db"
         self.database: Database | None = None
 
+        if (Path().parent / '.env').exists():
+            load_dotenv(Path().parent / '.env')
+
+        EnvironmentDatabaseVariables = [
+            "GALLERY_DATABASE_URL",
+            "ADMIN_PASSWORD",
+        ]
+        if(
+            reduce(
+                lambda AllFound, Current:
+                    AllFound if Current in os.environ.keys() else False,
+                EnvironmentDatabaseVariables,
+                True
+            )
+        ):
+            self.connection_URL: str = os.environ.get("GALLERY_DATABASE_URL") #type: ignore
+            self.admin_password: str = os.environ.get("ADMIN_PASSWORD") #type: ignore
+        else:
+            print("Environment didn't find or not full. Use default values")
+            self.connection_URL = "sqlite:///./database.db"
+            self.admin_password = "password"
+
     async def database_init(self):
         self.database = Database(self.connection_URL)
         await self.database.connect()
@@ -37,15 +63,13 @@ class DatabaseBaseClass:
             await self.request(
                 'CREATE TABLE IF NOT EXISTS images('\
                 '    imageId INTEGER PRIMARY KEY AUTOINCREMENT,'\
-                '    image BLOB NOT NULL);'
+                '    image TEXT NOT NULL);'
             )
             await self.request(
                 'CREATE TABLE IF NOT EXISTS images_to_tags('\
                 '    imageId INTEGER,'\
                 '    tagId INTEGER, '\
-                '    PRIMARY KEY (imageId, tagId)'\
-                '    FOREIGN KEY(imageId) REFERENCES images(imageId),'\
-                '    FOREIGN KEY(tagId) REFERENCES tags(tagId));'
+                '    UNIQUE("imageId","tagId"));'
             )
             await self.request(
                 'CREATE TABLE IF NOT EXISTS tags('\
@@ -56,15 +80,18 @@ class DatabaseBaseClass:
                 'CREATE TABLE IF NOT EXISTS tags_to_sections('\
                 '    tagId INTEGER,'\
                 '    sectionId INTEGER, '\
-                '    PRIMARY KEY (imageId, tagId)'\
-                '    FOREIGN KEY(tagId) REFERENCES tags(tagId),'\
-                '    FOREIGN KEY(sectionId) REFERENCES sections(sectionId));'
+                '    UNIQUE("tagId","sectionId"));'
             )
             await self.request(
                 'CREATE TABLE IF NOT EXISTS sections('\
                 '    sectionId INTEGER PRIMARY KEY AUTOINCREMENT,'\
                 '    section TEXT);'
             )
+            hashOfPassword = await self.request("SELECT hashOfPassword FROM admin")
+            if(hashOfPassword and hashOfPassword[0]["hashOfPassword"]): ...
+            else:
+                await self.request('INSERT INTO admin(hashOfPassword) VALUES(:hash);', \
+                        hash=self.Hasher.PasswordHash(self.admin_password))
         except Exception as e:
             print(e)
             self.database_inited = False

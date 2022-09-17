@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, Body
-from typing import Dict, NewType, Type, TypeVar, Union
+from fastapi import APIRouter, HTTPException, UploadFile
 import aiofiles
 from pathlib import Path
+from PIL import Image
 
 from Database.Database import *
 from Models.Images import *
@@ -22,13 +22,22 @@ async def get_all_images():
         raise HTTPException(status_code=500, detail='Database Error')
 
 @router.post('/images')
-async def add_image(image: UploadFile):
-    hashedFileName = HasherObject.CreateImageFileNameHash(image.filename)
-    async with aiofiles.open(Path() / "Content" / \
-                    "images" / hashedFileName, 'wb') as image_file:
-            await image_file.write(await image.read()) # type: ignore
-    return { "imageId": await database.add_image(str(Path() / "static" / \
-                        "images" / hashedFileName).replace("\\", "/")) }
+async def add_image(upload_image: UploadFile):
+    hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
+    async with aiofiles.open(Path() / "Content" / "images" / \
+                    "full_size" / hashedFileName, 'wb') as image_file:
+            await image_file.write(await upload_image.read()) # type: ignore
+    image = Image.open(str(Path() / "Content" / "images" \
+        / "full_size" / hashedFileName).replace("\\", "/"))
+    compressed_coefficient = (image.size[0]*image.size[1])/(1280*720) #HD
+    compressed_image = image.resize(
+        (
+            int(image.size[0]/(compressed_coefficient if compressed_coefficient > 1 else 1)), 
+            int(image.size[1]/(compressed_coefficient if compressed_coefficient > 1 else 1))
+        )
+    )
+    compressed_image.save(Path() / "Content" / "images" / "previews" / hashedFileName)
+    return { "imageId": await database.add_image(str(hashedFileName)) }
 
 @router.get('/sections/{SectionId}', response_model=List[ImageWithAllInfo])
 async def get_Section_Images(SectionId: int):
