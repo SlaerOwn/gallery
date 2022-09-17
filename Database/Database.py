@@ -3,12 +3,12 @@ from functools import reduce
 import os
 from pathlib import Path
 from typing import Any, List
-from dotenv import load_dotenv
 
 from databases import Database
 from Models.Admin import AdminInDatabase
 from Models.Images import ImageWithAllInfo, ImageWithAllInfoInDatabase, SectionInDatabase, TagInDatabase
 from Utils import *
+from Utils.Env import EnvClass
 
 class DatabaseError(Exception): pass
 class UserExists(DatabaseError): pass
@@ -24,33 +24,12 @@ class DatabaseBaseClass:
         self.path_to_database = "database.db"
         self.database_inited: bool = False
         self.Hasher = Hasher.HasherClass()
-        self.connection_URL : str = "sqlite:///./database.db"
         self.database: Database | None = None
-
-        if (Path().parent / '.env').exists():
-            load_dotenv(Path().parent / '.env')
-
-        EnvironmentDatabaseVariables = [
-            "GALLERY_DATABASE_URL",
-            "ADMIN_PASSWORD",
-        ]
-        if(
-            reduce(
-                lambda AllFound, Current:
-                    AllFound if Current in os.environ.keys() else False,
-                EnvironmentDatabaseVariables,
-                True
-            )
-        ):
-            self.connection_URL: str = os.environ.get("GALLERY_DATABASE_URL") #type: ignore
-            self.admin_password: str = os.environ.get("ADMIN_PASSWORD") #type: ignore
-        else:
-            print("Environment didn't find or not full. Use default values")
-            self.connection_URL = "sqlite:///./database.db"
-            self.admin_password = "password"
+        self.Env = EnvClass()
+        
 
     async def database_init(self):
-        self.database = Database(self.connection_URL)
+        self.database = Database(self.Env.env["GALLERY_DATABASE_URL"])
         await self.database.connect()
         self.database_inited = True
         try:
@@ -91,7 +70,7 @@ class DatabaseBaseClass:
             if(hashOfPassword and hashOfPassword[0]["hashOfPassword"]): ...
             else:
                 await self.request('INSERT INTO admin(hashOfPassword) VALUES(:hash);', \
-                        hash=self.Hasher.PasswordHash(self.admin_password))
+                        hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"]))
         except Exception as e:
             print(e)
             self.database_inited = False
