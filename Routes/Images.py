@@ -37,7 +37,7 @@ async def add_image(upload_image: UploadFile):
         )
     )
     compressed_image.save(Path() / "Content" / "images" / "previews" / hashedFileName)
-    return { "imageId": await database.add_image(str(hashedFileName)) }
+    return {"imageId": await database.add_image(str(hashedFileName)) }
 
 @router.get('/sections/{SectionId}', response_model=List[ImageWithAllInfo])
 async def get_Section_Images(SectionId: int):

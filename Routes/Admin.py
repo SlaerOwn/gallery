@@ -12,6 +12,7 @@ router = APIRouter()
 HasherObject = HasherClass()
 database = DatabaseClass()
 
+
 @router.post('/admin/token', status_code=200)
 async def check_token(body: CheckToken):
     try:
@@ -32,7 +33,7 @@ async def check_token(body: CheckToken):
 async def create_Section(Section: CreateSectionFields, user: NeedToken):
     try:
         hashed_password = await database.get_password()
-        hash = str(hashed_password['hashOfPassword'])
+        hash = str(hashed_password)
         if HasherObject.CheckToken(user.token, hash):
             await database.create_section(Section.section, Section.includedTags)
         else:
@@ -45,11 +46,11 @@ async def create_Section(Section: CreateSectionFields, user: NeedToken):
 async def delete_Section(SectionId: int, user: NeedToken):
     try:
         hashed_password = await database.get_password()
-        hash = str(hashed_password['hashOfPassword'])
+        hash = str(hashed_password)
         if HasherObject.CheckToken(user.token, hash):
             try:
                 await database.delete_section(SectionId)
-            except SectionNotFound:
+            except:
                 raise HTTPException(status_code=404, detail='Section not Found')
         else:
             raise HTTPException(status_code=401, detail='Bad Token')
@@ -61,7 +62,7 @@ async def delete_Section(SectionId: int, user: NeedToken):
 async def edit_info(user: NeedToken, info: EditInfo):
     try:
         password = await database.get_password()
-        hash = str(password['hashOfPassword'])
+        hash = str(password)
         if HasherObject.CheckToken(user.token, hash):
             await database.edit_info(info.info)
         else:
@@ -101,7 +102,7 @@ async def authorization(password: Authorization):
 async def create_tag(Tag: CreateTagFields, user: NeedToken):
     try:
         hashed_password = await database.get_password()
-        hash = str(hashed_password['hashOfPassword'])
+        hash = str(hashed_password)
         if HasherObject.CheckToken(user.token, hash):
             await database.create_tag(Tag.tag)
         else:
@@ -114,23 +115,13 @@ async def create_tag(Tag: CreateTagFields, user: NeedToken):
 async def delete_tag(tagId: int, user: NeedToken):
     try:
         hashed_password = await database.get_password()
-        hash = str(hashed_password['hashOfPassword'])
+        hash = str(hashed_password)
         if HasherObject.CheckToken(user.token, hash):
             try:
                 await database.delete_tag(tagId)
-            except TagNotFound:
+            except:
                 raise HTTPException(status_code=404, detail='Tag not Found')
         else:
             raise HTTPException(status_code=401, detail='Bad Token')
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-
-
-@router.post('/admin', status_code=200)
-async def create_image(image: CreateImageFields, user: NeedToken):
-    hashed_password = await database.get_password()
-    hash = str(hashed_password['hashOfPassword'])
-    if HasherObject.CheckToken(user.token, hash):
-        await database.add_photo(image.image, image.tags)
-    else:
-        raise HTTPException(status_code=401, detail='Bad Token')
