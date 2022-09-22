@@ -13,19 +13,35 @@ database = DatabaseClass()
 @router.get('/tags')
 async def get_Tags():
     try:
-        Tags = await database.get_tags()
-        return {'Tags': Tags}
+        return await database.get_tags()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
-@router.post('/images/{imageId}/tags')
-async def add_tags(imageId: int, tags: AddTagsToImageFields, user: NeedToken):
+@router.post('/images/{imageId}/tags/{tagId}')
+async def add_tag_to_image(imageId: int, tagId: int, user: NeedToken):
+    try: 
+        authorized = HasherObject.CheckToken(user.token, await database.get_password())
+        if(not authorized): raise Exception()
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    except: raise HTTPException(status_code=401)
     try:
-        for tagId in tags.tags:
-            await database.add_tag_to_image(imageId, tagId)
+        await database.add_tag_to_image(imageId, tagId)
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+@router.delete('/images/{imageId}/tags/{tagId}')
+async def delete_tag_from_image(imageId: int, tagId: int, user: NeedToken):
+    try: 
+        authorized = HasherObject.CheckToken(user.token, await database.get_password())
+        if(not authorized): raise Exception()
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    except: raise HTTPException(status_code=401)
+    try:
+        await database.delete_tag_from_image(imageId, tagId)
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
 
 @router.get('/sections')
 async def get_Sections():

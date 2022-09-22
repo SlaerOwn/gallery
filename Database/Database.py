@@ -106,11 +106,17 @@ class DatabaseBaseClass:
             for image in images_from_database:
                 if(len(images) != 0 and image["imageId"] == images[-1]["imageId"]):
                     if(image["tagId"]):
-                        images[-1]["tags"].append(TagInDatabase(tagId=image["tagId"], tag=image["tag"]))
+                        if(not images[-1]["tags"]): images[-1]["tags"] = []
+                        addedTags = [tag.tagId for tag in images[-1]["tags"]]
+                        if(image["tagId"] not in addedTags):
+                            images[-1]["tags"].append(TagInDatabase(tagId=image["tagId"], tag=image["tag"]))
                     if(image["sectionId"]):
-                        images[-1]["sections"].append(
-                            SectionInDatabase(sectionId=image["sectionId"], section=image["section"])
-                        )
+                        if(not images[-1]["sections"]): images[-1]["sections"] = []
+                        addedSections = [section.sectionId for section in images[-1]["sections"]]
+                        if(image["sectionId"] not in addedSections):
+                            images[-1]["sections"].append(
+                                SectionInDatabase(sectionId=image["sectionId"], section=image["section"])
+                            )
                 else: 
                     images.append(
                         ImageWithAllInfo(
@@ -160,6 +166,7 @@ class DatabaseClass(DatabaseBaseClass):
 
     # - TAGS -
     addTagToImageRequest = "INSERT or IGNORE INTO images_to_tags VALUES(:imageId, :tagId);"
+    deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
 
     # - SECTIONS -
 
@@ -188,13 +195,16 @@ class DatabaseClass(DatabaseBaseClass):
     async def add_tag_to_image(self, imageId: int, tagId: int):
         await self.request(self.addTagToImageRequest, imageId=imageId, tagId=tagId)
 
+    async def delete_tag_from_image(self, imageId: int, tagId: int):
+        await self.request(self.deleteTagFromImageRequest, imageId=imageId, tagId=tagId)
+
     async def create_tag(self, tag: str) -> None:
         await self.request(self.createTagRequest, tag=tag)
 
     async def delete_tag(self, tagId: int) -> None:
         await self.request(self.deleteTagRequest, {"tagId": tagId})
 
-    async def get_tags(self) -> list:
+    async def get_tags(self) -> list[TagInDatabase]:
         tags: List[TagInDatabase] | None \
             = await self.request(self.getTagsRequest) #type: ignore
         return tags if tags else []
