@@ -167,6 +167,7 @@ class DatabaseClass(DatabaseBaseClass):
     # - TAGS -
     addTagToImageRequest = "INSERT or IGNORE INTO images_to_tags VALUES(:imageId, :tagId);"
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
+    editTagNameRequest = 'UPDATE tags SET tag=:edited_name WHERE tagId=:tagId'
 
     # - SECTIONS -
 
@@ -203,6 +204,9 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def delete_tag(self, tagId: int) -> None:
         await self.request(self.deleteTagRequest, {"tagId": tagId})
+
+    async def edit_tag_name(self, tagId: int, edited_name: str):
+        await self.request(self.editTagNameRequest, {'tagId': tagId, 'edited_name': edited_name})
 
     async def get_tags(self) -> list[TagInDatabase]:
         tags: List[TagInDatabase] | None \

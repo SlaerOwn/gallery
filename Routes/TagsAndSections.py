@@ -17,6 +17,20 @@ async def get_Tags():
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+
+@router.put('/images/{imageId}/tags/{tagId}')
+async def edit_tag_name(tagId: int, edited_name: str, user: NeedToken):
+    try:
+        authorized = HasherObject.CheckToken(user.token, await database.get_password())
+        if (not authorized): raise HTTPException(status_code=401, detail='Not Authorized')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    try:
+        await database.edit_tag_name(tagId, edited_name)
+    except DatabaseError:
+        raise HTTPException(status_code=200, detail='OK')
+
+
 @router.post('/images/{imageId}/tags/{tagId}')
 async def add_tag_to_image(imageId: int, tagId: int, user: NeedToken):
     try: 
