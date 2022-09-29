@@ -21,6 +21,13 @@ async def get_all_images():
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+@router.get('/images/{imageId}', response_model=ImageWithAllInfo)
+async def get_image(imageId: int):
+    try:
+        return await database.get_image(imageId)
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
 @router.post('/images')
 async def add_image(upload_image: UploadFile):
     hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)

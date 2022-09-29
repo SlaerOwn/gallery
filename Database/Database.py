@@ -137,13 +137,8 @@ class DatabaseClass(DatabaseBaseClass):
     getPasswordRequest = "SELECT hashOfPassword FROM admin"
     getInfoRequest = "SELECT aboutMe FROM admin"
     editInfoRequest = "UPDATE admin set aboutMe=:aboutMe"
-    #addPhotoRequest = "INSERT INTO images(image, tags) VALUES(:image, :tags);"
-    createTagRequest = "INSERT INTO tags(tag) VALUES(:tag);"
-    deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId"
     createSectionRequest = "INSERT INTO sections(section, includedTags) VALUES(:section, :includedTags);"
     deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId"
-    #getAllPhotosRequest = "SELECT * FROM images"
-    #getSectionPhotosRequest = "SELECT * FROM images WHERE sectionId=:sectionId"
     getSectionsRequest = "SELECT * FROM sections"
     getTagsRequest = "SELECT * FROM tags"
 
@@ -163,11 +158,20 @@ class DatabaseClass(DatabaseBaseClass):
                     "WHERE sections.sectionId = :sectionId ORDER BY images.imageId"
     addImageRequest = "INSERT INTO images(image) VALUES(:image);"
     getLastImageId = "SELECT MAX(imageId) FROM images"
+    getImageById = "SELECT images.*, tags.*, sections.* FROM images "\
+                    "LEFT OUTER JOIN images_to_tags itt ON itt.imageId = images.imageId "\
+                    "LEFT OUTER JOIN tags ON itt.tagId = tags.tagId "\
+                    "LEFT OUTER JOIN tags_to_sections tts ON tts.tagId = tags.tagId "\
+                    "LEFT OUTER JOIN sections ON sections.sectionId = tts.sectionId "\
+                    "WHERE images.imageId=:imageId"
 
     # - TAGS -
     addTagToImageRequest = "INSERT or IGNORE INTO images_to_tags VALUES(:imageId, :tagId);"
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
     editTagNameRequest = 'UPDATE tags SET tag=:edited_name WHERE tagId=:tagId'
+    createTagRequest = "INSERT INTO tags(tag) VALUES(:tag);"
+    deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId"
+    getLastTagId = "SELECT MAX(tagId) FROM tags"
 
     # - SECTIONS -
 
@@ -199,11 +203,14 @@ class DatabaseClass(DatabaseBaseClass):
     async def delete_tag_from_image(self, imageId: int, tagId: int):
         await self.request(self.deleteTagFromImageRequest, imageId=imageId, tagId=tagId)
 
-    async def create_tag(self, tag: str) -> None:
+    async def create_tag(self, tag: str) -> int:
         await self.request(self.createTagRequest, tag=tag)
+        newTagIdRequestResult = await self.request(self.getLastTagId)
+        if(newTagIdRequestResult is None): raise DatabaseError()
+        return newTagIdRequestResult[0]["MAX(tagId)"]
 
     async def delete_tag(self, tagId: int) -> None:
-        await self.request(self.deleteTagRequest, {"tagId": tagId})
+        await self.request(self.deleteTagRequest, tagId=tagId)
 
     async def edit_tag_name(self, tagId: int, edited_name: str):
         await self.request(self.editTagNameRequest, {'tagId': tagId, 'edited_name': edited_name})
@@ -236,6 +243,11 @@ class DatabaseClass(DatabaseBaseClass):
         images: List[ImageWithAllInfoInDatabase] | None \
                 = await self.request(self.getSectionImagesRequest, sectionId=sectionId) #type: ignore
         return self.imageFromLineToTree(images) if images else []
+
+    async def get_image(self, imageId: int) -> ImageWithAllInfo | None:
+        images: List[ImageWithAllInfoInDatabase] | None \
+                = await self.request(self.getImageById, imageId=imageId) #type: ignore
+        return self.imageFromLineToTree(images)[0] if images else None
 
     async def add_image(self, filePath: str) -> int:
         await self.request(self.addImageRequest, image=filePath)

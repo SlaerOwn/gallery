@@ -18,7 +18,7 @@ async def get_Tags():
         raise HTTPException(status_code=500, detail='Database Error')
 
 
-@router.put('/images/{imageId}/tags/{tagId}')
+@router.put('/tags/{tagId}')
 async def edit_tag_name(tagId: int, edited_name: str, user: NeedToken):
     try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
@@ -27,6 +27,30 @@ async def edit_tag_name(tagId: int, edited_name: str, user: NeedToken):
         raise HTTPException(status_code=500, detail='Database Error')
     try:
         await database.edit_tag_name(tagId, edited_name)
+    except DatabaseError:
+        raise HTTPException(status_code=200, detail='OK')
+
+@router.post('/tags')
+async def create_tag(tag_name: str, user: NeedToken):
+    try:
+        authorized = HasherObject.CheckToken(user.token, await database.get_password())
+        if (not authorized): raise HTTPException(status_code=401, detail='Not Authorized')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    try:
+        return { "tagId": await database.create_tag(tag_name) }
+    except DatabaseError:
+        raise HTTPException(status_code=200, detail='OK')
+
+@router.delete('/tags/{tagId}')
+async def delete_tag(tagId: int, user: NeedToken):
+    try:
+        authorized = HasherObject.CheckToken(user.token, await database.get_password())
+        if (not authorized): raise HTTPException(status_code=401, detail='Not Authorized')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    try:
+        await database.delete_tag(tagId)
     except DatabaseError:
         raise HTTPException(status_code=200, detail='OK')
 
