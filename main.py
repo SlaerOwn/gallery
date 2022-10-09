@@ -4,12 +4,15 @@ import uvicorn
 from Database.Database import DatabaseConnectionError, DatabaseBaseClass
 from Routes import *
 from Utils.Hasher import HasherClass
-
+import os
 
 app = FastAPI()
 database = DatabaseBaseClass()
 HasherObject = HasherClass()
 
+os.mkdir(os.path.join(".", "Content"))
+os.mkdir(os.path.join(".", "Content", "full_size"))
+os.mkdir(os.path.join(".", "Content", "previews"))
 
 @app.on_event("startup")  # type: ignore
 async def startup_server():

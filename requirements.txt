@@ -1,0 +1,11 @@
+aiofiles==22.1.0
+databases==0.6.0
+fastapi==0.85.0
+passlib==1.7.4
+Pillow==9.2.0
+pydantic==1.9.1
+python-dotenv==0.21.0
+uvicorn==0.17.6
+asyncpg
+aiosqlite
+python-multipart
