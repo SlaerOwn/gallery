@@ -10,9 +10,10 @@ app = FastAPI()
 database = DatabaseBaseClass()
 HasherObject = HasherClass()
 
-os.mkdir(os.path.join(".", "Content"))
-os.mkdir(os.path.join(".", "Content", "full_size"))
-os.mkdir(os.path.join(".", "Content", "previews"))
+if(not os.path.exists(os.path.join(".", "Content"))):
+    os.mkdir(os.path.join(".", "Content"))
+    os.mkdir(os.path.join(".", "Content", "full_size"))
+    os.mkdir(os.path.join(".", "Content", "previews"))
 
 @app.on_event("startup")  # type: ignore
 async def startup_server():
