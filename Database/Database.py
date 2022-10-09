@@ -109,7 +109,7 @@ class DatabaseBaseClass:
                 images.append(self.imageFromDatabaseToJson(image_info))
                 image_info = []
             image_info.append(image_in_database_line)
-            
+        images.append(self.imageFromDatabaseToJson(image_info))
         return images
 
     def imageFromDatabaseToJson(self, image_from_database: list[ImageWithAllInfoInDatabase]) -> ImageWithAllInfo: 
@@ -149,6 +149,7 @@ class DatabaseBaseClass:
                 sections.append(self.sectionFromDatabaseToJson(section_info))
                 section_info = []
             section_info.append(section_in_database_line)
+        sections.append(self.sectionFromDatabaseToJson(section_info))
         return sections
 
     def sectionFromDatabaseToJson(self, section_from_database: list[SectionWithAllInfoInDatabase]) -> SectionWithAllInfo: 
@@ -201,7 +202,8 @@ class DatabaseClass(DatabaseBaseClass):
                     "LEFT OUTER JOIN tags ON itt.tagId = tags.tagId "\
                     "LEFT OUTER JOIN tags_to_sections tts ON tts.tagId = tags.tagId "\
                     "LEFT OUTER JOIN sections ON sections.sectionId = tts.sectionId "\
-                    "WHERE images.imageId=:imageId" #TODO: getAllImagesRequest + "WHERE..." addImageRequest = "INSERT INTO images(image) VALUES(:image);"
+                    "WHERE images.imageId=:imageId" #TODO: getAllImagesRequest + "WHERE..." 
+    addImageRequest = "INSERT INTO images(image) VALUES(:image);"
     getLastImageId = "SELECT MAX(imageId) FROM images"
     addTagToImageRequest = "INSERT or IGNORE INTO images_to_tags VALUES(:imageId, :tagId);"
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
