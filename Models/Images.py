@@ -32,6 +32,17 @@ class SectionInDatabase(BaseModel):
     sectionId: int
     section: str
 
+class SectionWithAllInfoInDatabase(TypedDict):
+    sectionId: int
+    section: str
+    tagId: int
+    tag: str
+
+class SectionWithAllInfo(TypedDict):
+    sectionId: int
+    section: str
+    tags: List[TagInDatabase]
+
 # - IMAGES -
 class ImageInDatabase(BaseModel):
     imageId: int
@@ -48,8 +59,8 @@ class ImageWithAllInfoInDatabase(TypedDict):
 class ImageWithAllInfo(TypedDict):
     imageId: int
     image: str
-    tags: List[TagInDatabase] | None
-    sections: List[SectionInDatabase] | None
+    tags: List[TagInDatabase]
+    sections: List[SectionInDatabase]
 
 class CreateImageFields(NeedToken):
     tags: List[int]

@@ -6,7 +6,7 @@ from typing import Any, List
 
 from databases import Database
 from Models.Admin import AdminInDatabase
-from Models.Images import ImageWithAllInfo, ImageWithAllInfoInDatabase, SectionInDatabase, TagInDatabase
+from Models.Images import ImageWithAllInfo, ImageWithAllInfoInDatabase, SectionInDatabase, SectionWithAllInfo, SectionWithAllInfoInDatabase, TagInDatabase
 from Utils import *
 from Utils.Env import EnvClass
 
@@ -100,34 +100,75 @@ class DatabaseBaseClass:
             print(f"Request error - {e}")
             raise DatabaseTransactionError()
 
-    def imageFromLineToTree(self, images_from_database: List[ImageWithAllInfoInDatabase]): 
+    def imagesFromDatabaseToJson(self, images_from_database: List[ImageWithAllInfoInDatabase]) -> list[ImageWithAllInfo]:
         images: List[ImageWithAllInfo] = []
-        if(images_from_database):
-            for image in images_from_database:
-                if(len(images) != 0 and image["imageId"] == images[-1]["imageId"]):
-                    if(image["tagId"]):
-                        if(not images[-1]["tags"]): images[-1]["tags"] = []
-                        addedTags = [tag.tagId for tag in images[-1]["tags"]]
-                        if(image["tagId"] not in addedTags):
-                            images[-1]["tags"].append(TagInDatabase(tagId=image["tagId"], tag=image["tag"]))
-                    if(image["sectionId"]):
-                        if(not images[-1]["sections"]): images[-1]["sections"] = []
-                        addedSections = [section.sectionId for section in images[-1]["sections"]]
-                        if(image["sectionId"] not in addedSections):
-                            images[-1]["sections"].append(
-                                SectionInDatabase(sectionId=image["sectionId"], section=image["section"])
-                            )
-                else: 
-                    images.append(
-                        ImageWithAllInfo(
-                            imageId=image["imageId"], 
-                            image=image["image"], 
-                            tags=[TagInDatabase(tagId=image["tagId"], tag=image["tag"])] 
-                                        if image["tagId"] else [], 
-                            sections=[SectionInDatabase(sectionId=image["sectionId"], section=image["section"])] 
-                                            if image["sectionId"] else [], 
-                        ))
+        if(not images_from_database): return []
+        image_info: List[ImageWithAllInfoInDatabase] = []
+        for image_in_database_line in images_from_database:
+            if(len(image_info) > 0 and image_in_database_line["imageId"] != image_info[-1]["imageId"]):
+                images.append(self.imageFromDatabaseToJson(image_info))
+                image_info = []
+            image_info.append(image_in_database_line)
+            
         return images
+
+    def imageFromDatabaseToJson(self, image_from_database: list[ImageWithAllInfoInDatabase]) -> ImageWithAllInfo: 
+        image: ImageWithAllInfo = ImageWithAllInfo(
+            imageId=image_from_database[0]["imageId"],
+            image=image_from_database[0]["image"],
+            tags=[],
+            sections=[]
+        )
+        for image_info in image_from_database:
+            if(image_info["tagId"]):
+                addedTags = [tag.tagId for tag in image["tags"]]
+                if(image_info["tagId"] not in addedTags):
+                    image["tags"].append(
+                        TagInDatabase(
+                            tagId=image_info["tagId"], 
+                            tag=image_info["tag"]
+                            )
+                        )
+            if(image_info["sectionId"]):
+                addedSections = [section.sectionId for section in image["sections"]]
+                if(image_info["sectionId"] not in addedSections):
+                    image["sections"].append(
+                        SectionInDatabase(
+                            sectionId=image_info["sectionId"], 
+                            section=image_info["section"]
+                        )
+                    )
+        return image
+
+    def sectionsFromDatabaseToJson(self, sections_from_database: List[SectionWithAllInfoInDatabase]) -> list[SectionWithAllInfo]:
+        sections: List[SectionWithAllInfo] = []
+        if(not sections_from_database): return []
+        section_info: List[SectionWithAllInfoInDatabase] = []
+        for section_in_database_line in sections_from_database:
+            if(len(section_info) > 0 and section_in_database_line["sectionId"] != section_info[-1]["sectionId"]):
+                sections.append(self.sectionFromDatabaseToJson(section_info))
+                section_info = []
+            section_info.append(section_in_database_line)
+        return sections
+
+    def sectionFromDatabaseToJson(self, section_from_database: list[SectionWithAllInfoInDatabase]) -> SectionWithAllInfo: 
+        section: SectionWithAllInfo = SectionWithAllInfo(
+            sectionId=section_from_database[0]["sectionId"],
+            section=section_from_database[0]["section"],
+            tags=[],
+        )
+        for section_info in section_from_database:
+            if(section_info["tagId"]):
+                addedTags = [tag.tagId for tag in section["tags"]]
+                if(section_info["tagId"] not in addedTags):
+                    section["tags"].append(
+                        TagInDatabase(
+                            tagId=section_info["tagId"], 
+                            tag=section_info["tag"]
+                            )
+                        )
+        return section
+
 
 class DatabaseClass(DatabaseBaseClass):
 
@@ -139,7 +180,6 @@ class DatabaseClass(DatabaseBaseClass):
     editInfoRequest = "UPDATE admin set aboutMe=:aboutMe"
     createSectionRequest = "INSERT INTO sections(section, includedTags) VALUES(:section, :includedTags);"
     deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId"
-    getSectionsRequest = "SELECT * FROM sections"
     getTagsRequest = "SELECT * FROM tags"
 
     # - ADMIN INFO -
@@ -156,26 +196,29 @@ class DatabaseClass(DatabaseBaseClass):
                     "LEFT OUTER JOIN tags_to_sections tts ON tts.tagId = tags.tagId "\
                     "LEFT OUTER JOIN sections ON sections.sectionId = tts.sectionId "\
                     "WHERE sections.sectionId = :sectionId ORDER BY images.imageId"
-    addImageRequest = "INSERT INTO images(image) VALUES(:image);"
-    getLastImageId = "SELECT MAX(imageId) FROM images"
     getImageById = "SELECT images.*, tags.*, sections.* FROM images "\
                     "LEFT OUTER JOIN images_to_tags itt ON itt.imageId = images.imageId "\
                     "LEFT OUTER JOIN tags ON itt.tagId = tags.tagId "\
                     "LEFT OUTER JOIN tags_to_sections tts ON tts.tagId = tags.tagId "\
                     "LEFT OUTER JOIN sections ON sections.sectionId = tts.sectionId "\
-                    "WHERE images.imageId=:imageId"
-
-    # - TAGS -
+                    "WHERE images.imageId=:imageId" #TODO: getAllImagesRequest + "WHERE..." addImageRequest = "INSERT INTO images(image) VALUES(:image);"
+    getLastImageId = "SELECT MAX(imageId) FROM images"
     addTagToImageRequest = "INSERT or IGNORE INTO images_to_tags VALUES(:imageId, :tagId);"
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
+
+    # - TAGS -
     editTagNameRequest = 'UPDATE tags SET tag=:edited_name WHERE tagId=:tagId'
     createTagRequest = "INSERT INTO tags(tag) VALUES(:tag);"
     deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId"
     getLastTagId = "SELECT MAX(tagId) FROM tags"
 
     # - SECTIONS -
-
-    
+    getSectionsRequest = "SELECT sections.*, tags.* FROM sections "\
+                         "LEFT OUTER JOIN tags_to_sections tts ON tts.sectionId = sections.sectionId "\
+                         "LEFT OUTER JOIN tags ON tags.tagId = tts.tagId "
+    addTagToSectionRequest = "INSERT or IGNORE INTO tags_to_sections VALUES(:tagId, :sectionId);"
+    deleteTagFromSectionRequest = "DELETE FROM tags_to_sections WHERE sectionId=:sectionId AND tagId=:tagId;"
+    changeSectionNameRequest = "UPDATE sections SET section=:section WHERE sectionId=:sectionId"
 
     # --- FUNCTIONS ---
 
@@ -197,12 +240,6 @@ class DatabaseClass(DatabaseBaseClass):
         await self.request(self.editInfoRequest, {"aboutMe": info})
 
     # - TAGS -
-    async def add_tag_to_image(self, imageId: int, tagId: int):
-        await self.request(self.addTagToImageRequest, imageId=imageId, tagId=tagId)
-
-    async def delete_tag_from_image(self, imageId: int, tagId: int):
-        await self.request(self.deleteTagFromImageRequest, imageId=imageId, tagId=tagId)
-
     async def create_tag(self, tag: str) -> int:
         await self.request(self.createTagRequest, tag=tag)
         newTagIdRequestResult = await self.request(self.getLastTagId)
@@ -221,36 +258,50 @@ class DatabaseClass(DatabaseBaseClass):
         return tags if tags else []
 
     # - SECTIONS -
-    async def get_sections(self) -> list[SectionInDatabase]:
-        sections: List[SectionInDatabase] | None \
+    async def get_sections(self) -> list[SectionWithAllInfo]:
+        sections: List[SectionWithAllInfoInDatabase] | None \
             = await self.request(self.getSectionsRequest) #type: ignore
-        return sections if sections else []
+        return self.sectionsFromDatabaseToJson(sections) if sections else []
 
-    async def create_section(self, section: str, includedTagsList) -> None:
-        includedTags = ";".join(includedTagsList)
-        await self.request(self.createSectionRequest, {"section": section, "includedTags": includedTags})
+    async def add_tag_to_section(self, sectionId: int, tagId: int):
+        await self.request(self.addTagToSectionRequest, sectionId=sectionId, tagId=tagId)
 
-    async def delete_section(self, sectionId: int) -> None:
-        await self.request(self.deleteSectionRequest, {"sectionId": sectionId})
+    async def delete_tag_from_section(self, sectionId: int, tagId: int):
+        await self.request(self.deleteTagFromSectionRequest, sectionId=sectionId, tagId=tagId)
+
+    async def change_section_name(self, sectionId: int, sectionName: str):
+        await self.request(self.changeSectionNameRequest, sectionId=sectionId, section=sectionName)
+
+    #async def create_section(self, section: str, includedTagsList) -> None:
+    #    includedTags = ";".join(includedTagsList)
+    #    await self.request(self.createSectionRequest, {"section": section, "includedTags": includedTags})
+    #async def delete_section(self, sectionId: int) -> None:
+    #    await self.request(self.deleteSectionRequest, {"sectionId": sectionId})
 
     # - IMAGES -
     async def get_all_images(self) -> List[ImageWithAllInfo]:
         images: List[ImageWithAllInfoInDatabase] | None \
                 = await self.request(self.getAllImagesRequest) #type: ignore
-        return self.imageFromLineToTree(images) if images else []
+        return self.imagesFromDatabaseToJson(images) if images else []
 
     async def get_section_images(self, sectionId: int) -> List[ImageWithAllInfo]:
         images: List[ImageWithAllInfoInDatabase] | None \
                 = await self.request(self.getSectionImagesRequest, sectionId=sectionId) #type: ignore
-        return self.imageFromLineToTree(images) if images else []
+        return self.imagesFromDatabaseToJson(images) if images else []
 
     async def get_image(self, imageId: int) -> ImageWithAllInfo | None:
         images: List[ImageWithAllInfoInDatabase] | None \
                 = await self.request(self.getImageById, imageId=imageId) #type: ignore
-        return self.imageFromLineToTree(images)[0] if images else None
+        return self.imagesFromDatabaseToJson(images)[0] if images else None
 
     async def add_image(self, filePath: str) -> int:
         await self.request(self.addImageRequest, image=filePath)
         newImageIdRequestResult = await self.request(self.getLastImageId)
         if(newImageIdRequestResult is None): raise DatabaseError()
         return newImageIdRequestResult[0]["MAX(imageId)"]
+
+    async def add_tag_to_image(self, imageId: int, tagId: int):
+        await self.request(self.addTagToImageRequest, imageId=imageId, tagId=tagId)
+
+    async def delete_tag_from_image(self, imageId: int, tagId: int):
+        await self.request(self.deleteTagFromImageRequest, imageId=imageId, tagId=tagId)
