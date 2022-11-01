@@ -181,7 +181,6 @@ class DatabaseClass(DatabaseBaseClass):
     editInfoRequest = "UPDATE admin set aboutMe=:aboutMe"
     createSectionRequest = "INSERT INTO sections(section, includedTags) VALUES(:section, :includedTags);"
     deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId"
-    getTagsRequest = "SELECT * FROM tags"
 
     # - ADMIN INFO -
     # - IMAGES -
@@ -209,6 +208,7 @@ class DatabaseClass(DatabaseBaseClass):
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
 
     # - TAGS -
+    getTagsRequest = "SELECT * FROM tags"
     editTagNameRequest = 'UPDATE tags SET tag=:edited_name WHERE tagId=:tagId'
     createTagRequest = "INSERT INTO tags(tag) VALUES(:tag);"
     deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId"

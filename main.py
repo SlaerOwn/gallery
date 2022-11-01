@@ -15,7 +15,7 @@ if(not os.path.exists(os.path.join(".", "Content"))):
     os.mkdir(os.path.join(".", "Content", "full_size"))
     os.mkdir(os.path.join(".", "Content", "previews"))
 
-@app.on_event("startup")  # type: ignore
+@app.on_event("startup")  # type: ignore  
 async def startup_server():
     if not await database.database_init():
         raise DatabaseConnectionError()
