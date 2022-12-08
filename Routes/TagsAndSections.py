@@ -25,7 +25,7 @@ async def create_tag(tag_name: str, user: NeedToken):
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
     try:
-        return { "tagId": await database.create_tag(tag_name) }
+        return {"tagId": await database.create_tag(tag_name) }
     except DatabaseError:
         raise HTTPException(status_code=200, detail='OK')
 
@@ -99,6 +99,7 @@ async def change_section_name(sectionId: int, section: str, user: NeedToken):
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+
 @router.post('/sections/{sectionId}/tags/{tagId}')
 async def add_tag_to_section(sectionId: int, tagId: int, user: NeedToken):
     try: 
@@ -112,6 +113,7 @@ async def add_tag_to_section(sectionId: int, tagId: int, user: NeedToken):
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+
 @router.delete('/sections/{sectionId}/tags/{tagId}')
 async def delete_tag_from_section(sectionId: int, tagId: int, user: NeedToken):
     try: 
@@ -122,5 +124,34 @@ async def delete_tag_from_section(sectionId: int, tagId: int, user: NeedToken):
     except: raise HTTPException(status_code=401)
     try:
         await database.delete_tag_from_section(sectionId, tagId)
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
+
+@router.post('/sections', status_code=200)
+async def create_Section(Section: CreateSectionFields, user: NeedToken):
+    try:
+        hashed_password = await database.get_password()
+        hash = str(hashed_password)
+        if HasherObject.CheckToken(user.token, hash):
+            await database.create_section(Section.section, Section.includedTags)
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
+
+@router.delete('/sections', status_code=200)
+async def delete_Section(SectionId: int, user: NeedToken):
+    try:
+        hashed_password = await database.get_password()
+        hash = str(hashed_password)
+        if HasherObject.CheckToken(user.token, hash):
+            try:
+                await database.delete_section(SectionId)
+            except:
+                raise HTTPException(status_code=404, detail='Section not Found')
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
