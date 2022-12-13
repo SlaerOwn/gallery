@@ -201,24 +201,25 @@ class DatabaseClass(DatabaseBaseClass):
                           "LEFT OUTER JOIN images_to_tags itt ON itt.imageId = images.imageId " \
                           "LEFT OUTER JOIN tags ON itt.tagId = tags.tagId " \
                           "LEFT OUTER JOIN tags_to_sections tts ON tts.tagId = tags.tagId " \
-                          "LEFT OUTER JOIN sections ON sections.sectionId = tts.sectionId " \
-                          "ORDER BY images.imageId "
-    getSectionImagesRequest = getAllImagesRequest + "WHERE sections.sectionId = :sectionId ORDER BY images.imageId"
+                          "LEFT OUTER JOIN sections ON sections.sectionId = tts.sectionId "
+    getAllImages = getAllImagesRequest + "ORDER BY images.imageId"
+    getSectionImagesRequest = getAllImagesRequest + "WHERE sections.sectionId = :sectionId"
     getImageById = getAllImagesRequest + "WHERE images.imageId=:imageId"
 
     addImageRequest = "INSERT INTO images(image) VALUES(:image);"
     getLastImageId = "SELECT MAX(imageId) FROM images"
     addTagToImageRequest = "INSERT or IGNORE INTO images_to_tags VALUES(:imageId, :tagId);"
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
-    deleteImageRequest = "DELETE FROM images WHERE imageId=:imageId; DELETE FROM images_to_tags WHERE imageId=:imageId;"
+    deleteImageRequest = "DELETE FROM images WHERE imageId=:imageId"
+    deletedImageMentions = "DELETE FROM images_to_tags WHERE imageId=:imageId"
 
     # - TAGS -
     getTagsRequest = "SELECT * FROM tags"
     editTagNameRequest = 'UPDATE tags SET tag=:edited_name WHERE tagId=:tagId'
     createTagRequest = "INSERT INTO tags(tag) VALUES(:tag);"
-    deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId; " \
-                       "DELETE FROM tags_to_sections WHERE tagId=:tagId; " \
-                       "DELETE FROM images_to_tags WHERE tagId=:tagId"
+    deleteTagRequest = "DELETE FROM tags WHERE tagId=:tagId"
+    deletedTagToImagesMentions = "DELETE FROM images_to_tags WHERE tagId=:tagId"
+    deletedTagToSectionsMentions = "DELETE FROM tags_to_sections WHERE tagId=:tagId"
     getLastTagId = "SELECT MAX(tagId) FROM tags"
 
     # - SECTIONS -
@@ -229,8 +230,8 @@ class DatabaseClass(DatabaseBaseClass):
     addTagToSectionRequest = "INSERT or IGNORE INTO tags_to_sections VALUES(:tagId, :sectionId);"
     deleteTagFromSectionRequest = "DELETE FROM tags_to_sections WHERE sectionId=:sectionId AND tagId=:tagId;"
     changeSectionNameRequest = "UPDATE sections SET section=:section WHERE sectionId=:sectionId"
-    deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId; " \
-                           "DELETE FROM tags_to_sections WHERE sectionId=:sectionId"
+    deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId"
+    deletedSectionMentions = "DELETE FROM tags_to_sections WHERE sectionId=:sectionId"
 
     # --- FUNCTIONS ---
 
@@ -260,6 +261,8 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def delete_tag(self, tagId: int) -> None:
         await self.request(self.deleteTagRequest, tagId=tagId)
+        await self.request(self.deletedTagToSectionsMentions, tagId=tagId)
+        await self.request(self.deletedTagToImagesMentions, tagId=tagId)
 
     async def edit_tag_name(self, tagId: int, edited_name: str):
         await self.request(self.editTagNameRequest, {'tagId': tagId, 'edited_name': edited_name})
@@ -289,11 +292,12 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def delete_section(self, sectionId: int) -> None:
         await self.request(self.deleteSectionRequest, sectionId=sectionId)
+        await self.request(self.deletedSectionMentions, sectionId=sectionId)
 
     # - IMAGES -
     async def get_all_images(self) -> List[ImageWithAllInfo]:
         images: List[ImageWithAllInfoInDatabase] | None \
-            = await self.request(self.getAllImagesRequest)  # type: ignore
+            = await self.request(self.getAllImages)  # type: ignore
         return self.imagesFromDatabaseToJson(images) if images else []
 
     async def get_section_images(self, sectionId: int) -> List[ImageWithAllInfo]:
@@ -320,3 +324,4 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def delete_image(self, imageId: int) -> None:
         await self.request(self.deleteImageRequest, imageId=imageId)
+        await self.request(self.deletedImageMentions, imageId=imageId)
