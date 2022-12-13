@@ -195,9 +195,6 @@ class DatabaseClass(DatabaseBaseClass):
     getPasswordRequest = "SELECT hashOfPassword FROM admin"
     getInfoRequest = "SELECT aboutMe FROM admin"
     editInfoRequest = "UPDATE admin set aboutMe=:info"
-    createSectionRequest = "INSERT INTO sections(section, includedTags) VALUES(:section, :includedTags);"
-    deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId; " \
-                           "DELETE FROM tags_to_sections WHERE sectionId=:sectionId"
 
     # - IMAGES -
     getAllImagesRequest = "SELECT images.*, tags.*, sections.* FROM images " \
@@ -228,9 +225,12 @@ class DatabaseClass(DatabaseBaseClass):
     getSectionsRequest = "SELECT sections.*, tags.* FROM sections " \
                          "LEFT OUTER JOIN tags_to_sections tts ON tts.sectionId = sections.sectionId " \
                          "LEFT OUTER JOIN tags ON tags.tagId = tts.tagId"
+    createSectionRequest = "INSERT INTO sections(section) VALUES(:section_name)"
     addTagToSectionRequest = "INSERT or IGNORE INTO tags_to_sections VALUES(:tagId, :sectionId);"
     deleteTagFromSectionRequest = "DELETE FROM tags_to_sections WHERE sectionId=:sectionId AND tagId=:tagId;"
     changeSectionNameRequest = "UPDATE sections SET section=:section WHERE sectionId=:sectionId"
+    deleteSectionRequest = "DELETE FROM sections WHERE sectionId=:sectionId; " \
+                           "DELETE FROM tags_to_sections WHERE sectionId=:sectionId"
 
     # --- FUNCTIONS ---
 
@@ -284,9 +284,9 @@ class DatabaseClass(DatabaseBaseClass):
     async def change_section_name(self, sectionId: int, sectionName: str):
         await self.request(self.changeSectionNameRequest, sectionId=sectionId, section=sectionName)
 
-    # async def create_section(self, section: str, includedTagsList) -> None:
-    #    includedTags = ";".join(includedTagsList)
-    #    await self.request(self.createSectionRequest, {"section": section, "includedTags": includedTags})
+    async def create_section(self, section: str) -> None:
+        await self.request(self.createSectionRequest, section_name=section)
+
     async def delete_section(self, sectionId: int) -> None:
         await self.request(self.deleteSectionRequest, sectionId=sectionId)
 

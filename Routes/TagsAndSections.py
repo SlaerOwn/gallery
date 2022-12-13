@@ -129,12 +129,12 @@ async def delete_tag_from_section(sectionId: int, tagId: int, user: NeedToken):
 
 
 @router.post('/sections', status_code=200)
-async def create_Section(Section: CreateSectionFields, user: NeedToken):
+async def create_Section(section: str, user: NeedToken):
     try:
         hashed_password = await database.get_password()
         hash = str(hashed_password)
         if HasherObject.CheckToken(user.token, hash):
-            await database.create_section(Section.section, Section.includedTags)
+            await database.create_section(section)
         else:
             raise HTTPException(status_code=401, detail='Bad Token')
     except DatabaseError:
