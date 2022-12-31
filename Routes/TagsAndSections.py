@@ -141,7 +141,7 @@ async def create_Section(section: str, user: NeedToken):
         raise HTTPException(status_code=500, detail='Database Error')
 
 
-@router.delete('/sections', status_code=200)
+@router.delete('/sections/{SectionId}', status_code=200)
 async def delete_Section(SectionId: int, user: NeedToken):
     try:
         hashed_password = await database.get_password()
