@@ -34,9 +34,9 @@ async def get_image(imageId: int):
 @router.post('/images')
 async def add_image(upload_image: UploadFile):
     hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
-    async with aiofiles.open(Path() / "Content" / "images" / "full_size" / hashedFileName, 'wb') as image_file:
+    async with aiofiles.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute(), 'wb') as image_file:
         await image_file.write(await upload_image.read())  # type: ignore
-    image = Image.open(str(Path() / "Content" / "images" / "full_size" / hashedFileName).replace("\\", "/"))
+    image = Image.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute())
     compressed_coefficient = (image.size[0] * image.size[1]) / (Env.env["GALLERY_PREVIEW_TARGET_SIZE"])
     compressed_image = image.resize(
         (
