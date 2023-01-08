@@ -1,6 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import uvicorn
 from Database.Database import DatabaseConnectionError, DatabaseBaseClass
 from Routes import *
 from Utils.Hasher import HasherClass
@@ -9,6 +9,19 @@ import os
 app = FastAPI()
 database = DatabaseBaseClass()
 HasherObject = HasherClass()
+
+origins = [
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 if(not os.path.exists(os.path.join(".", "Content"))):
     os.mkdir(os.path.join(".", "Content"))
