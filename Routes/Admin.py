@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException
 from typing import List
+from fastapi import APIRouter, HTTPException, UploadFile
+import aiofiles
+from PIL import Image
 
 from Database.Database import *
 from Models.Admin import CheckToken, EditInfo
@@ -11,6 +13,7 @@ router = APIRouter()
 
 HasherObject = HasherClass()
 database = DatabaseClass()
+Env = EnvClass()
 
 
 @router.post('/admin/token', status_code=200)
@@ -19,7 +22,8 @@ async def check_token(body: CheckToken):
         hashed_password = await database.get_password()
         try:
             token_correct = HasherObject.CheckToken(body.token, hashed_password)
-        except Exception: raise HTTPException(status_code=401)
+        except Exception:
+            raise HTTPException(status_code=401)
         if token_correct:
             return
         else:
@@ -68,4 +72,9 @@ async def authorization(password: Authorization):
         raise HTTPException(status_code=500, detail='Database Error')
 
 
-
+@router.put('/about/pp')
+async def add_avatar(upload_image: UploadFile):
+    async with aiofiles.open((Path() / "Content" / "images" / "avatar" / "avatar.jpg").absolute(),
+                             'wb') as image_file:
+        await image_file.write(await upload_image.read())  # type: ignore
+    return HTTPException(status_code=200, detail='Success')

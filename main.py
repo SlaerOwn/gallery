@@ -27,6 +27,8 @@ if(not os.path.exists(os.path.join(".", "Content"))):
     os.mkdir(os.path.join(".", "Content"))
     os.mkdir(os.path.join(".", "Content", "full_size"))
     os.mkdir(os.path.join(".", "Content", "previews"))
+    os.mkdir(os.path.join(".", "Content", "avatar"))
+
 
 @app.on_event("startup")  # type: ignore  
 async def startup_server():
