@@ -73,8 +73,18 @@ async def authorization(password: Authorization):
 
 
 @router.put('/about/pp')
-async def add_avatar(upload_image: UploadFile):
-    async with aiofiles.open((Path() / "Content" / "images" / "avatar" / "avatar.jpg").absolute(),
-                             'wb') as image_file:
-        await image_file.write(await upload_image.read())  # type: ignore
-    return HTTPException(status_code=200, detail='Success')
+async def add_avatar(upload_image: UploadFile, token: str):
+    try:
+        authorized = HasherObject.CheckToken(token, await database.get_password())
+        if(not authorized): raise Exception()
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    except: raise HTTPException(status_code=401)
+    try:
+        async with aiofiles.open((Path() / "Content" / "images" / "avatar" / "avatar.jpg").absolute(),
+                                 'wb') as image_file:
+            await image_file.write(await upload_image.read())  # type: ignore
+        return HTTPException(status_code=200, detail='Success')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+

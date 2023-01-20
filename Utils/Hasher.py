@@ -1,6 +1,7 @@
 import passlib.context
 from passlib.hash import hex_sha512 as hex_sha512
 
+
 class HasherClass:
     def __init__(self):
         self.PasswordHasher = passlib.context.CryptContext(schemes=['bcrypt'], deprecated='auto')

@@ -32,20 +32,31 @@ async def get_image(imageId: int):
 
 
 @router.post('/images')
-async def add_image(upload_image: UploadFile):
-    hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
-    async with aiofiles.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute(), 'wb') as image_file:
-        await image_file.write(await upload_image.read())  # type: ignore
-    image = Image.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute())
-    compressed_coefficient = (image.size[0] * image.size[1]) / (Env.env["GALLERY_PREVIEW_TARGET_SIZE"])
-    compressed_image = image.resize(
-        (
-            int(image.size[0] / (compressed_coefficient if compressed_coefficient > 1 else 1)),
-            int(image.size[1] / (compressed_coefficient if compressed_coefficient > 1 else 1))
+async def add_image(upload_image: UploadFile, token: str):
+    try:
+        authorized = HasherObject.CheckToken(token, await database.get_password())
+        if(not authorized): raise Exception()
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+    except: raise HTTPException(status_code=401)
+    try:
+        hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
+        async with aiofiles.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute(),
+                                 'wb') as image_file:
+            await image_file.write(await upload_image.read())  # type: ignore
+        image = Image.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute())
+        compressed_coefficient = (image.size[0] * image.size[1]) / (Env.env["GALLERY_PREVIEW_TARGET_SIZE"])
+        compressed_image = image.resize(
+            (
+                int(image.size[0] / (compressed_coefficient if compressed_coefficient > 1 else 1)),
+                int(image.size[1] / (compressed_coefficient if compressed_coefficient > 1 else 1))
+            )
         )
-    )
-    compressed_image.save(Path() / "Content" / "images" / "previews" / hashedFileName)
-    return {"imageId": await database.add_image(str(hashedFileName))}
+        compressed_image.save(Path() / "Content" / "images" / "previews" / hashedFileName)
+        return {"imageId": await database.add_image(str(hashedFileName))}
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
 
 
 @router.get('/sections/{SectionId}', response_model=List[ImageWithAllInfo])
