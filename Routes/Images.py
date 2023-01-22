@@ -36,10 +36,6 @@ async def add_image(upload_image: UploadFile, token: str):
     try:
         authorized = HasherObject.CheckToken(token, await database.get_password())
         if(not authorized): raise Exception()
-    except DatabaseError:
-        raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
-    try:
         hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
         async with aiofiles.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute(),
                                  'wb') as image_file:
@@ -56,6 +52,8 @@ async def add_image(upload_image: UploadFile, token: str):
         return {"imageId": await database.add_image(str(hashedFileName))}
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
+    except: raise HTTPException(status_code=401)
+
 
 
 

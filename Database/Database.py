@@ -193,7 +193,7 @@ class DatabaseClass(DatabaseBaseClass):
 
     getAdminRequest = "SELECT * FROM admin"
     getPasswordRequest = "SELECT hashOfPassword FROM admin"
-    getInfoRequest = "SELECT aboutMe FROM admin"
+    getInfoRequest = "SELECT aboutMe, avatar FROM admin"
     editInfoRequest = "UPDATE admin set aboutMe=:info"
 
     # - IMAGES -
@@ -212,6 +212,8 @@ class DatabaseClass(DatabaseBaseClass):
     deleteTagFromImageRequest = "DELETE FROM images_to_tags WHERE imageId=:imageId AND tagId=:tagId;"
     deleteImageRequest = "DELETE FROM images WHERE imageId=:imageId"
     deletedImageMentions = "DELETE FROM images_to_tags WHERE imageId=:imageId"
+    rewriteAvatarRequest = "UPDATE admin SET avatar=:avatar"
+    getAvatarRequest = "SELECT avatar FROM admin"
 
     # - TAGS -
     getTagsRequest = "SELECT * FROM tags"
@@ -251,6 +253,13 @@ class DatabaseClass(DatabaseBaseClass):
 
     async def edit_info(self, info: str) -> None:
         await self.request(self.editInfoRequest, info=info)
+
+    async def get_avatar(self):
+        avatar = await self.request(self.getAvatarRequest)
+        return avatar[0]["avatar"]
+
+    async def rewrite_avatar(self, name: str):
+        await self.request(self.rewriteAvatarRequest, avatar=name)
 
     # - TAGS -
     async def create_tag(self, tag: str) -> int:

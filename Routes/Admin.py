@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, UploadFile
 import aiofiles
 from PIL import Image
+import os
 
 from Database.Database import *
 from Models.Admin import CheckToken, EditInfo
@@ -76,15 +77,16 @@ async def authorization(password: Authorization):
 async def add_avatar(upload_image: UploadFile, token: str):
     try:
         authorized = HasherObject.CheckToken(token, await database.get_password())
-        if(not authorized): raise Exception()
-    except DatabaseError:
-        raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
-    try:
-        async with aiofiles.open((Path() / "Content" / "images" / "avatar" / "avatar.jpg").absolute(),
+        if (not authorized): raise Exception()
+        avatar = await database.get_avatar()
+        hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
+        async with aiofiles.open((Path() / "Content" / "images" / "avatar" / hashedFileName).absolute(),
                                  'wb') as image_file:
             await image_file.write(await upload_image.read())  # type: ignore
+            try:
+                os.remove(Path() / "Content" / "images" / "avatar" / avatar)
+            except: pass
+            await database.rewrite_avatar(str(hashedFileName))
         return HTTPException(status_code=200, detail='Success')
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-
