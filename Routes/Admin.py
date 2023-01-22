@@ -87,6 +87,6 @@ async def add_avatar(upload_image: UploadFile, token: str):
                 os.remove(Path() / "Content" / "images" / "avatar" / avatar)
             except: pass
             await database.rewrite_avatar(str(hashedFileName))
-        return HTTPException(status_code=200, detail='Success')
+        return str(hashedFileName)
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
