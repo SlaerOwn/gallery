@@ -25,9 +25,11 @@ app.add_middleware(
 
 if(not os.path.exists(os.path.join(".", "Content"))):
     os.mkdir(os.path.join(".", "Content"))
-    os.mkdir(os.path.join(".", "Content", "full_size"))
-    os.mkdir(os.path.join(".", "Content", "previews"))
-    os.mkdir(os.path.join(".", "Content", "avatar"))
+    os.mkdir(os.path.join(".", "Content", "images"))
+    os.mkdir(os.path.join(".", "Content", "About Me"))
+    os.mkdir(os.path.join(".", "Content", "About Me", "avatar"))
+    os.mkdir(os.path.join(".", "Content", "images", "full_size"))
+    os.mkdir(os.path.join(".", "Content", "images", "previews"))
 
 
 @app.on_event("startup")  # type: ignore  

@@ -52,9 +52,6 @@ async def add_image(upload_image: UploadFile, token: str):
         return {"imageId": await database.add_image(str(hashedFileName))}
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
-
-
 
 
 @router.get('/sections/{SectionId}', response_model=List[ImageWithAllInfo])
