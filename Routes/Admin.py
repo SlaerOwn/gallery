@@ -81,11 +81,11 @@ async def add_avatar(upload_image: UploadFile, token: str):
         if (not authorized): raise Exception()
         avatar = await database.get_avatar()
         hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
-        async with aiofiles.open((Path() / "Content" / "About Me" / "avatar" / hashedFileName).absolute(),
+        async with aiofiles.open((Path() / "Content" / "images" / "avatar" / hashedFileName).absolute(),
                                  'wb') as image_file:
             await image_file.write(await upload_image.read())  # type: ignore
             try:
-                os.remove(Path() / "Content" / "About Me" / "avatar" / avatar)
+                os.remove(Path() / "Content" / "images" / "avatar" / avatar)
             except: pass
             await database.rewrite_avatar(str(hashedFileName))
         return str(hashedFileName)
