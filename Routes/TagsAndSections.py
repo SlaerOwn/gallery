@@ -17,6 +17,7 @@ async def get_Tags():
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+
 @router.post('/tags')
 async def create_tag(tag_name: str, user: NeedToken):
     try:
@@ -25,9 +26,11 @@ async def create_tag(tag_name: str, user: NeedToken):
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
     try:
-        return {"tagId": await database.create_tag(tag_name) }
+        tagId = await database.create_tag(tag_name)
+        return {"tagId": tagId}
     except DatabaseError:
         raise HTTPException(status_code=200, detail='OK')
+
 
 @router.put('/tags/{tagId}')
 async def edit_tag_name(tagId: int, edited_name: str, user: NeedToken):
@@ -41,6 +44,7 @@ async def edit_tag_name(tagId: int, edited_name: str, user: NeedToken):
     except DatabaseError:
         raise HTTPException(status_code=200, detail='OK')
 
+
 @router.delete('/tags/{tagId}')
 async def delete_tag(tagId: int, user: NeedToken):
     try:
@@ -53,31 +57,36 @@ async def delete_tag(tagId: int, user: NeedToken):
     except DatabaseError:
         raise HTTPException(status_code=200, detail='OK')
 
+
 @router.post('/images/{imageId}/tags/{tagId}')
 async def add_tag_to_image(imageId: int, tagId: int, user: NeedToken):
-    try: 
+    try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
-        if(not authorized): raise Exception()
+        if (not authorized): raise Exception()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
+    except:
+        raise HTTPException(status_code=401)
     try:
         await database.add_tag_to_image(imageId, tagId)
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+
 @router.delete('/images/{imageId}/tags/{tagId}')
 async def delete_tag_from_image(imageId: int, tagId: int, user: NeedToken):
-    try: 
+    try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
-        if(not authorized): raise Exception()
+        if (not authorized): raise Exception()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
+    except:
+        raise HTTPException(status_code=401)
     try:
         await database.delete_tag_from_image(imageId, tagId)
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
+
 
 @router.get('/sections')
 async def get_Sections():
@@ -86,14 +95,16 @@ async def get_Sections():
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
 
+
 @router.put('/sections/{sectionId}')
 async def change_section_name(sectionId: int, section: str, user: NeedToken):
-    try: 
+    try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
-        if(not authorized): raise Exception()
+        if (not authorized): raise Exception()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
+    except:
+        raise HTTPException(status_code=401)
     try:
         await database.change_section_name(sectionId, section)
     except DatabaseError:
@@ -102,12 +113,13 @@ async def change_section_name(sectionId: int, section: str, user: NeedToken):
 
 @router.post('/sections/{sectionId}/tags/{tagId}')
 async def add_tag_to_section(sectionId: int, tagId: int, user: NeedToken):
-    try: 
+    try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
-        if(not authorized): raise Exception()
+        if (not authorized): raise Exception()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
+    except:
+        raise HTTPException(status_code=401)
     try:
         await database.add_tag_to_section(sectionId, tagId)
     except DatabaseError:
@@ -116,12 +128,13 @@ async def add_tag_to_section(sectionId: int, tagId: int, user: NeedToken):
 
 @router.delete('/sections/{sectionId}/tags/{tagId}')
 async def delete_tag_from_section(sectionId: int, tagId: int, user: NeedToken):
-    try: 
+    try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
-        if(not authorized): raise Exception()
+        if (not authorized): raise Exception()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
-    except: raise HTTPException(status_code=401)
+    except:
+        raise HTTPException(status_code=401)
     try:
         await database.delete_tag_from_section(sectionId, tagId)
     except DatabaseError:
@@ -129,12 +142,25 @@ async def delete_tag_from_section(sectionId: int, tagId: int, user: NeedToken):
 
 
 @router.post('/sections', status_code=200)
-async def create_Section(section: str, user: NeedToken):
+async def create_Section(section: str, description: str, user: NeedToken):
     try:
         hashed_password = await database.get_password()
         hash = str(hashed_password)
         if HasherObject.CheckToken(user.token, hash):
-            await database.create_section(section)
+            await database.create_section(section, description)
+        else:
+            raise HTTPException(status_code=401, detail='Bad Token')
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail='Database Error')
+
+
+@router.put('/sections/{SectionId}/description')
+async def edit_section_description(SectionId: int, description: str, user: NeedToken):
+    try:
+        hashed_password = await database.get_password()
+        hash = str(hashed_password)
+        if HasherObject.CheckToken(user.token, hash):
+            await database.edit_description(SectionId, description)
         else:
             raise HTTPException(status_code=401, detail='Bad Token')
     except DatabaseError:
