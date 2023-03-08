@@ -16,7 +16,7 @@ class EnvClass:
         self.env: EnvSettings = {
             "GALLERY_DATABASE_URL": "sqlite:///./database.db",
             "GALLERY_ADMIN_PASSWORD": "pass",
-            "GALLERY_PREVIEW_TARGET_SIZE": 921600,
+            "GALLERY_PREVIEW_TARGET_SIZE": 2073600,
         }
         if (Path().parent / '.env').exists():
             load_dotenv(Path().parent / '.env')
