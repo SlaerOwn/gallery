@@ -79,9 +79,11 @@ class DatabaseBaseClass:
                 '    section TEXT,' \
                 '    description TEXT);'
             )
-            await self.request('UPDATE admin SET hashOfPassword=:hash',
-                                hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"])
-                               )
+            try:
+                await self.request('UPDATE admin SET hashOfPassword=:hash',
+                                hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"]))
+            except:
+                ...
 
         except Exception as e:
             print(e)
