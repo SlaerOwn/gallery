@@ -33,8 +33,7 @@ async def get_image(imageId: int):
 
 @router.post('/images')
 async def add_image(
-        upload_image: UploadFile, token: str = Form()
-                    ):
+        upload_image: UploadFile, token: str):
     try:
         authorized = HasherObject.CheckToken(token, await database.get_password())
         if not authorized: raise Exception()
