@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, Form
+from fastapi import APIRouter, HTTPException, UploadFile
 import aiofiles
 from pathlib import Path
 from PIL import Image
