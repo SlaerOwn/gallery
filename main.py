@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 
-if(not os.path.exists(os.path.join(".", "Content"))):
+if not os.path.exists(os.path.join(".", "Content")):
     os.mkdir(os.path.join(".", "Content"))
     os.mkdir(os.path.join(".", "Content", "images"))
     os.mkdir(os.path.join(".", "Content", "images", "avatar"))

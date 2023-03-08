@@ -78,7 +78,7 @@ async def authorization(password: Authorization):
 async def add_avatar(upload_image: UploadFile, token: str):
     try:
         authorized = HasherObject.CheckToken(token, await database.get_password())
-        if (not authorized): raise Exception()
+        if not authorized: raise Exception()
         avatar = await database.get_avatar()
         hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
         async with aiofiles.open((Path() / "Content" / "images" / "avatar" / hashedFileName).absolute(),

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, UploadFile, Form
 import aiofiles
 from pathlib import Path
 from PIL import Image
@@ -32,10 +32,12 @@ async def get_image(imageId: int):
 
 
 @router.post('/images')
-async def add_image(upload_image: UploadFile, token: str):
+async def add_image(
+        upload_image: UploadFile, token: str = Form()
+                    ):
     try:
         authorized = HasherObject.CheckToken(token, await database.get_password())
-        if(not authorized): raise Exception()
+        if not authorized: raise Exception()
         hashedFileName = HasherObject.CreateImageFileNameHash(upload_image.filename)
         async with aiofiles.open((Path() / "Content" / "images" / "full_size" / hashedFileName).absolute(),
                                  'wb') as image_file:
@@ -66,7 +68,7 @@ async def get_Section_Images(SectionId: int):
 async def delete_image(user: NeedToken, imageId: int):
     try:
         authorized = HasherObject.CheckToken(user.token, await database.get_password())
-        if(not authorized): raise Exception()
+        if not authorized: raise Exception()
     except DatabaseError:
         raise HTTPException(status_code=500, detail='Database Error')
     except: raise HTTPException(status_code=401)

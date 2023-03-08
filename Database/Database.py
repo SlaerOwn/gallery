@@ -1,4 +1,3 @@
-from __future__ import annotations
 from functools import reduce
 import os
 from pathlib import Path
@@ -80,12 +79,10 @@ class DatabaseBaseClass:
                 '    section TEXT,' \
                 '    description TEXT);'
             )
-            hashOfPassword = await self.request("SELECT hashOfPassword FROM admin")
-            if (hashOfPassword and hashOfPassword[0]["hashOfPassword"]):
-                ...
-            else:
-                await self.request('INSERT INTO admin(hashOfPassword) VALUES(:hash);', \
-                                   hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"]))
+            await self.request('UPDATE admin SET hashOfPassword=:hash',
+                                hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"])
+                               )
+
         except Exception as e:
             print(e)
             self.database_inited = False
@@ -93,15 +90,15 @@ class DatabaseBaseClass:
             return self.database_inited
 
     async def database_uninit(self):
-        if (self.database): await self.database.disconnect()
+        if self.database: await self.database.disconnect()
 
     async def request(self, request: str, *args: dict[str, str | int], **other: str | int):
-        if (not self.database_inited or self.database == None):
-            if (not await self.database_init()):
+        if not self.database_inited or self.database is None:
+            if not await self.database_init():
                 raise DatabaseConnectionError()
         try:
             common_dict = {key: value for dict in [*args, other] for key, value in dict.items()}
-            if ("select" not in request.lower()):
+            if "select" not in request.lower():
                 await self.database.execute(request, common_dict)  # type: ignore
                 return None
             else:
@@ -115,13 +112,12 @@ class DatabaseBaseClass:
             print(f"Request error - {e}")
             raise DatabaseTransactionError()
 
-    def imagesFromDatabaseToJson(self, images_from_database: List[ImageWithAllInfoInDatabase]) -> list[
-        ImageWithAllInfo]:
+    def imagesFromDatabaseToJson(self, images_from_database: List[ImageWithAllInfoInDatabase]) -> list[ImageWithAllInfo]:
         images: List[ImageWithAllInfo] = []
-        if (not images_from_database): return []
+        if not images_from_database: return []
         image_info: List[ImageWithAllInfoInDatabase] = []
         for image_in_database_line in images_from_database:
-            if (len(image_info) > 0 and image_in_database_line["imageId"] != image_info[-1]["imageId"]):
+            if len(image_info) > 0 and image_in_database_line["imageId"] != image_info[-1]["imageId"]:
                 images.append(self.imageFromDatabaseToJson(image_info))
                 image_info = []
             image_info.append(image_in_database_line)
@@ -136,18 +132,18 @@ class DatabaseBaseClass:
             sections=[]
         )
         for image_info in image_from_database:
-            if (image_info["tagId"]):
+            if image_info["tagId"]:
                 addedTags = [tag.tagId for tag in image["tags"]]
-                if (image_info["tagId"] not in addedTags):
+                if image_info["tagId"] not in addedTags:
                     image["tags"].append(
                         TagInDatabase(
                             tagId=image_info["tagId"],
                             tag=image_info["tag"]
                         )
                     )
-            if (image_info["sectionId"]):
+            if image_info["sectionId"]:
                 addedSections = [section.sectionId for section in image["sections"]]
-                if (image_info["sectionId"] not in addedSections):
+                if image_info["sectionId"] not in addedSections:
                     image["sections"].append(
                         SectionInDatabase(
                             sectionId=image_info["sectionId"],
@@ -159,10 +155,10 @@ class DatabaseBaseClass:
     def sectionsFromDatabaseToJson(self, sections_from_database: List[SectionWithAllInfoInDatabase]) -> list[
         SectionWithAllInfo]:
         sections: List[SectionWithAllInfo] = []
-        if (not sections_from_database): return []
+        if not sections_from_database: return []
         section_info: List[SectionWithAllInfoInDatabase] = []
         for section_in_database_line in sections_from_database:
-            if (len(section_info) > 0 and section_in_database_line["sectionId"] != section_info[-1]["sectionId"]):
+            if len(section_info) > 0 and section_in_database_line["sectionId"] != section_info[-1]["sectionId"]:
                 sections.append(self.sectionFromDatabaseToJson(section_info))
                 section_info = []
             section_info.append(section_in_database_line)
@@ -177,9 +173,9 @@ class DatabaseBaseClass:
             tags=[],
         )
         for section_info in section_from_database:
-            if (section_info["tagId"]):
+            if section_info["tagId"]:
                 addedTags = [tag.tagId for tag in section["tags"]]
-                if (section_info["tagId"] not in addedTags):
+                if section_info["tagId"] not in addedTags:
                     section["tags"].append(
                         TagInDatabase(
                             tagId=section_info["tagId"],
