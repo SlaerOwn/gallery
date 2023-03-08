@@ -80,11 +80,13 @@ class DatabaseBaseClass:
                 '    description TEXT);'
             )
             try:
+                password = await self.request('SELECT hashOfPassword FROM admin')
+                password = password[0]["hashOfPassword"]
                 await self.request('UPDATE admin SET hashOfPassword=:hash',
                                 hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"]))
             except:
-                ...
-
+                await self.request('INSERT INTO admin(hashOfPassword) VALUES(:hash);',
+                                   hash=self.Hasher.PasswordHash(self.Env.env["GALLERY_ADMIN_PASSWORD"]))
         except Exception as e:
             print(e)
             self.database_inited = False
